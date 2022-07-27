@@ -18,6 +18,7 @@
 		<kotlin.version>1.6.21</kotlin.version>
 	</properties>
 	<dependencies>
+		<!-- Spring-related, JPA and web stuff; Kotlin, H2, etc -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -46,12 +47,23 @@
 			<groupId>org.jetbrains.kotlin</groupId>
 			<artifactId>kotlin-stdlib-jdk8</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<!-- Business-logic-related stuff -->
+		<dependency>
+			<groupId>com.drewnoakes</groupId>
+			<artifactId>metadata-extractor</artifactId>
+			<version>2.18.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mp4parser</groupId>
+			<artifactId>isoparser</artifactId>
+			<version>1.9.41</version>
+		</dependency>
+		<!-- Tests -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
