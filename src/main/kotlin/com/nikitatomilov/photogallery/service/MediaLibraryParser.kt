@@ -16,13 +16,24 @@ class MediaLibraryParser {
   private val ex = Executors.newFixedThreadPool(THREADS)
 
   fun parse(fromDir: File): Map<Int, List<MediaEntity>> {
+    return parse(listOf(fromDir))
+  }
+
+  fun parse(fromDirs: List<File>): Map<Int, List<MediaEntity>> {
+    return parse(fromDirs.associateWith { getMediaFiles(it) })
+  }
+
+  private fun getMediaFiles(fromDir: File): List<File> {
     if (!fromDir.isDirectory) {
       error("${fromDir.absolutePath} is not a directory")
     }
-
     val allFiles = fromDir.walkTopDown().map { it }.toList()
-    val mediaFiles = allFiles.filter { it.isPhoto() || it.isVideo() }.map { MediaEntity(fromDir, it) }
+    return allFiles.filter { it.isPhoto() || it.isVideo() }
+  }
 
+  private fun parse(files: Map<File, List<File>>): Map<Int, List<MediaEntity>> {
+    val mediaFiles =
+        files.map { (fromDir, files) -> files.map { MediaEntity(fromDir, it) } }.flatten()
     println("Found ${mediaFiles.size} media files. Parsing metadata...")
     val mediaFilesBatches = mediaFiles.shuffled().batched(THREADS)
     val latch = CountDownLatch(mediaFiles.size)

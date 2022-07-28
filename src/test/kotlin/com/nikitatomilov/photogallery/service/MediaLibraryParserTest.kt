@@ -12,9 +12,9 @@ class MediaLibraryParserTest {
         println("Usage: app <fromDirectory>")
         exitProcess(2)
       }
-      val fromDir = File(args[0])
+      val fromDirs = args.map { File(it) }
       val mp = MediaLibraryParser()
-      val byYear = mp.parse(fromDir)
+      val byYear = mp.parse(fromDirs)
       val years = byYear.keys.toList().sorted()
       years.forEach { year ->
         val photosPerYear = byYear[year]!!
