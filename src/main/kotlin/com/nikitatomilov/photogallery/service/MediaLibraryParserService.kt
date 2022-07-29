@@ -15,7 +15,7 @@ import java.time.ZoneOffset
 import javax.annotation.PostConstruct
 
 @Service
-class MediaLibraryParser(
+class MediaLibraryParserService(
   @Value("\${lib.location}") private val rootPaths: Array<String>,
   @Autowired private val mediaEntityRepository: MediaEntityRepository
 ) {
@@ -28,12 +28,17 @@ class MediaLibraryParser(
     rootDirs = rootPaths.map { path ->
       File(path).also { if (!it.isDirectory) error("$it is not a directory") }
     }
-    ensureAlreadyExistingFiles()
-    parse()
+    val existing = ensureIndexedEntitiesExistInFilesystem()
+    val new = tryAddNewEntities()
+    logger.warn { "${existing.size} entities already in DB, ${new.size} entities added" }
+    val all = mediaEntityRepository.count()
+    if (all != (existing.size.toLong() + new.size)) {
+      error("Entities count mismatch: $all != ${existing.size} + ${new.size}")
+    }
   }
 
-  fun parse(): Map<Int, List<MediaEntity>> {
-    return parse(rootDirs.associateWith { getMediaFiles(it) })
+  fun tryAddNewEntities(): List<MediaEntity> {
+    return tryAddNewEntities(rootDirs.associateWith { getMediaFiles(it) })
   }
 
   private fun getMediaFiles(fromDir: File): List<File> {
@@ -44,22 +49,22 @@ class MediaLibraryParser(
     return allFiles.filter { it.isPhoto() || it.isVideo() }
   }
 
-  private fun parse(files: Map<File, List<File>>): Map<Int, List<MediaEntity>> {
+  private fun tryAddNewEntities(files: Map<File, List<File>>): List<MediaEntity> {
     val mediaFiles =
         files.map { (fromDir, files) -> files.map { FilesystemMediaEntity(fromDir, it) } }.flatten()
-    logger.warn { "Found ${mediaFiles.size} media files. Parsing metadata..." }
-    val entities = mediaFiles
-        .mapIndexed { i, it -> index(it, i + 1, mediaFiles.size) }
-        .filterNotNull()
-
-    val byYear = entities.groupBy {
-      val i = Instant.ofEpochMilli(it.parsedDate).atOffset(ZoneOffset.UTC)
-      i.year
+    logger.warn { "Found ${mediaFiles.size} media files in the filesystem. Parsing metadata..." }
+    val newEntities = ArrayList<MediaEntity>()
+    mediaFiles.forEachIndexed { i, it ->
+      val existing = tryFindExisting(it)
+      if (existing == null) {
+        val new = indexNew(it, i, mediaFiles.size)
+        if (new != null) newEntities.add(new)
+      }
     }
-    return byYear
+    return newEntities
   }
 
-  private fun ensureAlreadyExistingFiles() {
+  private fun ensureIndexedEntitiesExistInFilesystem(): List<MediaEntity> {
     val existing = mediaEntityRepository.findAll()
     logger.warn { "${existing.size} entities exist in the DB" }
     val nonExistingAnymore = ArrayList<MediaEntity>()
@@ -69,13 +74,14 @@ class MediaLibraryParser(
       }
     }
     if (nonExistingAnymore.isNotEmpty()) {
-      logger.warn { "${nonExistingAnymore.size} entities were not found, removing from DB" }
+      logger.warn { "${nonExistingAnymore.size} entities were not found in the FS, removing from DB" }
       nonExistingAnymore.forEach { logger.warn { " - ${it.fullPath}" } }
       mediaEntityRepository.deleteAll(nonExistingAnymore)
     }
+    return existing
   }
 
-  private fun index(fsEntity: FilesystemMediaEntity, i: Int, n: Int): MediaEntity? {
+  private fun tryFindExisting(fsEntity: FilesystemMediaEntity): MediaEntity? {
     val existingByName = mediaEntityRepository.findAllByFileName(fsEntity.file.name)
     if (existingByName.isNotEmpty()) {
       val existingByPath = mediaEntityRepository.findAllByFullPath(fsEntity.file.absolutePath)
@@ -90,6 +96,10 @@ class MediaLibraryParser(
         }
       }
     }
+    return null
+  }
+
+  private fun indexNew(fsEntity: FilesystemMediaEntity, i: Int, n: Int): MediaEntity? {
     var fileSeemsBroken = false
     try {
       fsEntity.parseMetadata()
