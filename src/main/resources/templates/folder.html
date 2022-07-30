@@ -1,8 +1,37 @@
-<html>
+<html xmlns="http://www.w3.org/1999/html">
 <head>
     <title th:text="|Folder ${cur.displayName}|"></title>
 </head>
+<script lang="js">
 
+    function compareById(a, b) {
+        var aord = +a.id;
+        var bord = +b.id;
+        return ((aord > bord) ? 1 : -1);
+    }
+
+    function compareByTs(a, b) {
+        var aord = +a.ts;
+        var bord = +b.ts;
+        return ((aord > bord) ? 1 : -1);
+    }
+
+    function sortPhotosByName(func) {
+        var parent = document.getElementById('filesList')
+        var items = parent.children;
+        items = Array.prototype.slice.call(items, 0);
+
+        items.sort(function (a, b) {
+            return func(a, b)
+        });
+
+        parent.innerHTML = "";
+
+        for (var i = 0, l = items.length; i < l; i++) {
+            parent.appendChild(items[i]);
+        }
+    }
+</script>
 <body>
 <a href="/">Back to root</a>
 <h1 th:text="|Folder ${cur.displayName}|"></h1>
@@ -11,8 +40,14 @@
     <a th:href="@{/folder?path={path}(path=${folder.path})}" th:text="${folder.displayName}"></a>
 </div>
 <h3>Files:</h3>
-<div th:each="file:${files}">
-    <a th:href="@{/file?path={path}(path=${file.path})}" th:text="${file.displayName}"></a>
+<button type="button" onclick="sortPhotosByName(compareById)">By Name</button>
+<button type="button" onclick="sortPhotosByName(compareByTs)">By Timestamp</button>
+<div id="filesList">
+    <div th:each="file:${files}">
+        <div th:id="${file.displayName}" th:data-ts="${file.timestamp}">
+            <a th:href="@{/file?path={path}(path=${file.path})}" th:text="${file.displayName}"></a>
+        </div>
+    </div>
 </div>
 </body>
 </html>

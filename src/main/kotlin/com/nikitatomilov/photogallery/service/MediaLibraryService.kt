@@ -38,6 +38,24 @@ class MediaLibraryService(
 
   fun getRootDirs(): List<File> = rootDirs
 
+  fun find(file: File): MediaEntity? {
+    val existingByName = mediaEntityRepository.findAllByFileName(file.name)
+    if (existingByName.isNotEmpty()) {
+      val existingByPath = mediaEntityRepository.findAllByFullPath(file.absolutePath)
+      if (existingByPath.size > 1) {
+        logger.error { "Too many entities: $existingByPath" }
+        return existingByPath.random()
+      }
+      if (existingByPath.size == 1) {
+        val found = existingByPath.single()
+        if (found.fullPath == file.absolutePath) {
+          return found
+        }
+      }
+    }
+    return null
+  }
+
   private fun tryAddNewEntities(): List<MediaEntity> {
     return tryAddNewEntities(rootDirs.associateWith { getMediaFiles(it) })
   }
@@ -56,7 +74,7 @@ class MediaLibraryService(
     logger.warn { "Found ${mediaFiles.size} media files in the filesystem. Parsing metadata..." }
     val newEntities = ArrayList<MediaEntity>()
     mediaFiles.forEachIndexed { i, it ->
-      val existing = tryFindExisting(it.file)
+      val existing = find(it.file)
       if (existing == null) {
         val new = indexNew(it, i, mediaFiles.size)
         if (new != null) newEntities.add(new)
@@ -80,24 +98,6 @@ class MediaLibraryService(
       mediaEntityRepository.deleteAll(nonExistingAnymore)
     }
     return existing
-  }
-
-  private fun tryFindExisting(file: File): MediaEntity? {
-    val existingByName = mediaEntityRepository.findAllByFileName(file.name)
-    if (existingByName.isNotEmpty()) {
-      val existingByPath = mediaEntityRepository.findAllByFullPath(file.absolutePath)
-      if (existingByPath.size > 1) {
-        logger.error { "Too many entities: $existingByPath" }
-        return existingByPath.random()
-      }
-      if (existingByPath.size == 1) {
-        val found = existingByPath.single()
-        if (found.fullPath == file.absolutePath) {
-          return found
-        }
-      }
-    }
-    return null
   }
 
   private fun indexNew(fsEntity: FilesystemMediaEntity, i: Int, n: Int): MediaEntity? {

@@ -13,4 +13,11 @@ data class MediaEntity(
   @Column(nullable = false) var parsedDate: Long,
   @Column(nullable = true) var overrideDate: Long? = null,
   @Column(nullable = false) var isBroken: Boolean = false
-)
+) {
+
+  fun getDate(): Long {
+    val override = overrideDate
+    if (override != null) return override
+    return parsedDate
+  }
+}

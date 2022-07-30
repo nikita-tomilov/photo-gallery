@@ -20,7 +20,11 @@ class FilesService(
     val cur = FolderDto(file)
     val subDirs = file.listFiles()?.filter { it.isDirectory }?.sortedBy { it.name } ?: emptyList()
     val photos = file.listFiles()?.filter { it.isPhoto() }?.sortedBy { it.name }  ?: emptyList()
-    return FolderWithContentsDto(cur, subDirs.map { FolderDto(it) }, photos.map { PhotoDto(it) })
+    val photoEntities = photos.mapNotNull { mediaLibraryService.find(it) }
+    return FolderWithContentsDto(cur,
+        subDirs.map { FolderDto(it) },
+        photoEntities.map { PhotoDto(it.fileName, it.fullPath, it.getDate()) }
+    )
   }
 
   private fun isCorrectRequest(f: File): Boolean {
