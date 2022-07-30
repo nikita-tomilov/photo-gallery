@@ -3,6 +3,7 @@ package com.nikitatomilov.photogallery.service
 import com.nikitatomilov.photogallery.dao.FilesystemMediaEntity
 import com.nikitatomilov.photogallery.dao.MediaEntity
 import com.nikitatomilov.photogallery.dao.MediaEntityRepository
+import com.nikitatomilov.photogallery.dto.FolderDto
 import com.nikitatomilov.photogallery.util.isPhoto
 import com.nikitatomilov.photogallery.util.isVideo
 import mu.KLogging
@@ -10,12 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.io.File
-import java.time.Instant
-import java.time.ZoneOffset
 import javax.annotation.PostConstruct
 
 @Service
-class MediaLibraryParserService(
+class MediaLibraryService(
   @Value("\${lib.location}") private val rootPaths: Array<String>,
   @Autowired private val mediaEntityRepository: MediaEntityRepository
 ) {
@@ -37,7 +36,9 @@ class MediaLibraryParserService(
     }
   }
 
-  fun tryAddNewEntities(): List<MediaEntity> {
+  fun getRootDirs(): List<File> = rootDirs
+
+  private fun tryAddNewEntities(): List<MediaEntity> {
     return tryAddNewEntities(rootDirs.associateWith { getMediaFiles(it) })
   }
 
@@ -55,7 +56,7 @@ class MediaLibraryParserService(
     logger.warn { "Found ${mediaFiles.size} media files in the filesystem. Parsing metadata..." }
     val newEntities = ArrayList<MediaEntity>()
     mediaFiles.forEachIndexed { i, it ->
-      val existing = tryFindExisting(it)
+      val existing = tryFindExisting(it.file)
       if (existing == null) {
         val new = indexNew(it, i, mediaFiles.size)
         if (new != null) newEntities.add(new)
@@ -81,17 +82,17 @@ class MediaLibraryParserService(
     return existing
   }
 
-  private fun tryFindExisting(fsEntity: FilesystemMediaEntity): MediaEntity? {
-    val existingByName = mediaEntityRepository.findAllByFileName(fsEntity.file.name)
+  private fun tryFindExisting(file: File): MediaEntity? {
+    val existingByName = mediaEntityRepository.findAllByFileName(file.name)
     if (existingByName.isNotEmpty()) {
-      val existingByPath = mediaEntityRepository.findAllByFullPath(fsEntity.file.absolutePath)
+      val existingByPath = mediaEntityRepository.findAllByFullPath(file.absolutePath)
       if (existingByPath.size > 1) {
         logger.error { "Too many entities: $existingByPath" }
         return existingByPath.random()
       }
       if (existingByPath.size == 1) {
         val found = existingByPath.single()
-        if (found.fullPath == fsEntity.file.absolutePath) {
+        if (found.fullPath == file.absolutePath) {
           return found
         }
       }
@@ -107,7 +108,13 @@ class MediaLibraryParserService(
       logger.error(e) { "Error on file ${fsEntity.file.absolutePath} " }
       fileSeemsBroken = true
     }
-    val new = MediaEntity(null, fsEntity.file.name, fsEntity.file.absolutePath, fsEntity.date, null, fileSeemsBroken)
+    val new = MediaEntity(
+        null,
+        fsEntity.file.name,
+        fsEntity.file.absolutePath,
+        fsEntity.date,
+        null,
+        fileSeemsBroken)
     try {
       val saved = mediaEntityRepository.save(new)
       logger.info { "[$i/$n] ${fsEntity.file.absolutePath} saved with id ${saved.id}" }

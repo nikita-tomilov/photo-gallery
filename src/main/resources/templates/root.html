@@ -1,0 +1,13 @@
+<html>
+<head>
+    <title>Photo Gallery</title>
+</head>
+
+<body>
+<h1>Photo Gallery Root</h1>
+<h3>Folders:</h3>
+<div th:each="folder:${folders}">
+    <a th:href="@{/folder?path={path}(path=${folder.path})}" th:text="${folder.displayName}"></a>
+</div>
+</body>
+</html>

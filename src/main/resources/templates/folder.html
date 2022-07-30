@@ -1,0 +1,18 @@
+<html>
+<head>
+    <title th:text="|Folder ${cur.displayName}|"></title>
+</head>
+
+<body>
+<a href="/">Back to root</a>
+<h1 th:text="|Folder ${cur.displayName}|"></h1>
+<h3>Folders:</h3>
+<div th:each="folder:${folders}">
+    <a th:href="@{/folder?path={path}(path=${folder.path})}" th:text="${folder.displayName}"></a>
+</div>
+<h3>Files:</h3>
+<div th:each="file:${files}">
+    <a th:href="@{/file?path={path}(path=${file.path})}" th:text="${file.displayName}"></a>
+</div>
+</body>
+</html>
