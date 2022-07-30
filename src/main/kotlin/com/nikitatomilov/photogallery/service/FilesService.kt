@@ -1,5 +1,6 @@
 package com.nikitatomilov.photogallery.service
 
+import com.nikitatomilov.photogallery.dao.MediaEntity
 import com.nikitatomilov.photogallery.dto.FolderDto
 import com.nikitatomilov.photogallery.dto.FolderWithContentsDto
 import com.nikitatomilov.photogallery.dto.PhotoDto
@@ -16,21 +17,26 @@ class FilesService(
   fun getRootDirs() = mediaLibraryService.getRootDirs().map { FolderDto(it) }
 
   fun getFolderContent(file: File): FolderWithContentsDto {
-    if (!isCorrectRequest(file)) return FolderWithContentsDto.empty(file)
+    if (!(isCorrectRequest(file) && file.isDirectory)) return FolderWithContentsDto.empty(file)
     val cur = FolderDto(file)
     val subDirs = file.listFiles()?.filter { it.isDirectory }?.sortedBy { it.name } ?: emptyList()
-    val photos = file.listFiles()?.filter { it.isPhoto() }?.sortedBy { it.name }  ?: emptyList()
+    val photos = file.listFiles()?.filter { it.isPhoto() }?.sortedBy { it.name } ?: emptyList()
     val photoEntities = photos.mapNotNull { mediaLibraryService.find(it) }
     return FolderWithContentsDto(cur,
         subDirs.map { FolderDto(it) },
-        photoEntities.map { PhotoDto(it.fileName, it.fullPath, it.getDate()) }
+        photoEntities.map { it.toPhotoDto() }
     )
+  }
+
+  fun getPhotoContent(id: Long): PhotoDto {
+    val entity = mediaLibraryService.find(id) ?: return PhotoDto.empty(File("$id"))
+    return entity.toPhotoDto()
   }
 
   private fun isCorrectRequest(f: File): Boolean {
     val roots = mediaLibraryService.getRootDirs()
     roots.forEach {
-      if (it.contains(f)) return f.isDirectory
+      if (it.contains(f)) return true
     }
     return false
   }
@@ -46,4 +52,7 @@ class FilesService(
     }
     return false
   }
+
+  private fun MediaEntity.toPhotoDto() =
+      PhotoDto(this.id!!, this.fileName, this.fullPath, this.getDate())
 }

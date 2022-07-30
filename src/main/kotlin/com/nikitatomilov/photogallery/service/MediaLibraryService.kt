@@ -9,6 +9,7 @@ import com.nikitatomilov.photogallery.util.isVideo
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import java.io.File
 import javax.annotation.PostConstruct
@@ -37,6 +38,11 @@ class MediaLibraryService(
   }
 
   fun getRootDirs(): List<File> = rootDirs
+
+  fun find(id: Long): MediaEntity? {
+    if (id < 0) return null
+    return mediaEntityRepository.findByIdOrNull(id)
+  }
 
   fun find(file: File): MediaEntity? {
     val existingByName = mediaEntityRepository.findAllByFileName(file.name)

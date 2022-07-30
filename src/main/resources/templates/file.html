@@ -1,0 +1,27 @@
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <title th:text="|File ${cur.displayName}|"></title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        .imgbox {
+            display: grid;
+            height: 100%;
+        }
+        .center-fit {
+            max-width: 100%;
+            max-height: 100vh;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+<a th:href="${back}">Back</a>
+<h1 th:text="|File ${cur.displayName}|"></h1>
+<div class="imgbox">
+    <img class="center-fit" th:src="${imgLink}" alt="" />
+</div>
+</body>
+</html>

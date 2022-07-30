@@ -25,12 +25,20 @@ class MediaLibraryController(
     val contents = filesService.getFolderContent(File(path))
     model.addAttribute("cur", contents.current)
     model.addAttribute("folders", contents.folders)
-    model.addAttribute("files", contents.photos)
+    model.addAttribute("photos", contents.photos)
+    model.addAttribute("back", "/folder?path=$path")
     return "folder"
   }
 
   @GetMapping("/file")
-  fun viewFile(@RequestParam("path") path: String, model: Model): String {
-    error("not-supported-yet")
+  fun viewFile(
+    @RequestParam("id") id: Long,
+    @RequestParam("back") back: String,
+    model: Model): String {
+    val contents = filesService.getPhotoContent(id)
+    model.addAttribute("cur", contents)
+    model.addAttribute("back", back)
+    model.addAttribute("imgLink", "/image/${contents.id}")
+    return "file"
   }
 }

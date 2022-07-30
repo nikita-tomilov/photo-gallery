@@ -40,12 +40,12 @@
     <a th:href="@{/folder?path={path}(path=${folder.path})}" th:text="${folder.displayName}"></a>
 </div>
 <h3>Files:</h3>
-<button type="button" onclick="sortPhotosByName(compareById)">By Name</button>
-<button type="button" onclick="sortPhotosByName(compareByTs)">By Timestamp</button>
+<!--<button type="button" onclick="sortPhotosByName(compareById)">By Name</button>-->
+<!--<button type="button" onclick="sortPhotosByName(compareByTs)">By Timestamp</button>-->
 <div id="filesList">
-    <div th:each="file:${files}">
-        <div th:id="${file.displayName}" th:data-ts="${file.timestamp}">
-            <a th:href="@{/file?path={path}(path=${file.path})}" th:text="${file.displayName}"></a>
+    <div th:each="photo:${photos}">
+        <div th:id="${photo.displayName}" th:data-ts="${photo.timestamp}">
+            <a th:href="@{/file(id=${photo.id}, back=${back})}" th:text="${photo.displayName}"></a>
         </div>
     </div>
 </div>
