@@ -2,6 +2,31 @@
 <head>
     <title th:text="|Folder ${cur.displayName}|"></title>
 </head>
+<style>
+    .photoContainer {
+        display: inline-block;
+        width: 128px;
+        height: 128px;
+        margin: 4px;
+        /*background-color: blue;*/
+
+        vertical-align: top; /*not required*/
+        border: 1px solid black; /*not required*/
+        position: relative;
+    }
+    .photoInternals {
+        max-height: 100%;
+        max-width: 100%;
+        width: auto;
+        height: auto;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        margin: auto;
+    }
+</style>
 <script lang="js">
 
     function compareById(a, b) {
@@ -43,10 +68,10 @@
 <!--<button type="button" onclick="sortPhotosByName(compareById)">By Name</button>-->
 <!--<button type="button" onclick="sortPhotosByName(compareByTs)">By Timestamp</button>-->
 <div id="filesList">
-    <div th:each="photo:${photos}">
-        <div th:id="${photo.displayName}" th:data-ts="${photo.timestamp}">
-            <a th:href="@{/file(id=${photo.id}, back=${back})}" th:text="${photo.displayName}"></a>
-        </div>
+    <div th:each="photo:${photos}" class="photoContainer" th:id="${photo.displayName}" th:data-ts="${photo.timestamp}">
+        <a th:href="@{/file(id=${photo.id}, back=${back})}">
+            <img th:src="|/image/preview/${photo.id}|" th:alt="${photo.displayName}" class="photoInternals"/>
+        </a>
     </div>
 </div>
 </body>

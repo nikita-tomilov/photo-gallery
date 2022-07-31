@@ -69,6 +69,11 @@
 			<artifactId>isoparser</artifactId>
 			<version>1.9.41</version>
 		</dependency>
+		<dependency>
+			<groupId>net.coobird</groupId>
+			<artifactId>thumbnailator</artifactId>
+			<version>0.4.17</version>
+		</dependency>
 		<!-- Tests -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
