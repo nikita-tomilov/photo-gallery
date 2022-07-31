@@ -1,45 +1,67 @@
 package com.nikitatomilov.photogallery.service
 
 import com.nikitatomilov.photogallery.dao.MediaEntity
-import com.nikitatomilov.photogallery.dto.FolderDto
-import com.nikitatomilov.photogallery.dto.FolderWithContentsDto
-import com.nikitatomilov.photogallery.dto.PhotoDto
-import com.nikitatomilov.photogallery.dto.PhotoPositionDto
+import com.nikitatomilov.photogallery.dto.*
 import com.nikitatomilov.photogallery.util.isPhoto
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.io.File
+import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneOffset
 
 @Service
 class FilesService(
   @Autowired private val mediaLibraryService: MediaLibraryService
 ) {
 
-  private val photoEntitiesCache = HashMap<File, List<MediaEntity>>()
+  private val photoEntitiesCache = HashMap<MediaRequest, List<MediaEntity>>()
 
   fun getRootDirs() = mediaLibraryService.getRootDirs().map { FolderDto(it) }
 
-  fun getFolderContent(file: File): FolderWithContentsDto {
-    if (!(isCorrectRequest(file) && file.isDirectory)) return FolderWithContentsDto.empty(file)
-    val cur = FolderDto(file)
-    val subDirs = file.listFiles()?.filter { it.isDirectory }?.sortedBy { it.name } ?: emptyList()
-    val photos = file.listFiles()?.filter { it.isPhoto() }?.sortedBy { it } ?: emptyList()
-    val photoEntities = photoEntitiesCache.getOrPut(file) {
+  fun getFolderContent(folder: File): FolderWithContentsDto {
+    if (!(isCorrectRequest(folder) && folder.isDirectory)) return FolderWithContentsDto.empty(folder)
+    val cur = FolderDto(folder)
+    val subDirs = folder.listFiles()?.filter { it.isDirectory }?.sortedBy { it.name } ?: emptyList()
+    val photos = folder.listFiles()?.filter { it.isPhoto() }?.sortedBy { it } ?: emptyList()
+    val photoEntities = photoEntitiesCache.getOrPut(FolderRequest(folder)) {
       photos.mapNotNull { mediaLibraryService.find(it) }.sortedBy { it.getDate() }
     }
     return FolderWithContentsDto(
         cur,
-        getParent(file),
+        getParent(folder),
         subDirs.map { FolderDto(it) },
         photoEntities.map { it.toPhotoDto() }
     )
   }
 
-  fun getPhotoContent(id: Long, back: File): Pair<PhotoDto, PhotoPositionDto> {
+  /*
+  TODO:
+  1) replace FolderWithContentsDto with something
+  2) create new view instead of folder.html for year request, reuse photo grid html
+   */
+  fun getYearContent(year: Long): FolderWithContentsDto {
+    val photoEntities = photoEntitiesCache.getOrPut(YearlyRequest(year)) {
+      val f = ZoneOffset.UTC
+      val from = LocalDate.of(year.toInt(), 1, 1).atStartOfDay().toInstant(f)
+      val to = LocalDate.of(year.toInt(), 12, 31).atTime(LocalTime.MAX).toInstant(f)
+      mediaLibraryService.find(from, to).sortedBy { it.getDate() }
+    }
+    return FolderWithContentsDto(
+        FolderDto(year.toString(), "dummy-path"),
+        FolderDto(year.toString(), "dummy-parent-path"),
+        emptyList(),
+        photoEntities.map { it.toPhotoDto() }
+    )
+  }
+
+  fun getPhotoContent(id: Long, originalRequest: MediaRequest): Pair<PhotoDto, PhotoPositionDto> {
     val entity = mediaLibraryService.find(id)
       ?: return PhotoDto.empty(File("$id")) to PhotoPositionDto.empty(id)
     val photoDto = entity.toPhotoDto()
-    val photoPosition = getPosition(entity.id!!, back)
+    val photoPosition = getPosition(entity.id!!, originalRequest)
     return photoDto to photoPosition
   }
 
@@ -62,7 +84,7 @@ class FilesService(
     }
   }
 
-  private fun getPosition(id: Long, view: File): PhotoPositionDto {
+  private fun getPosition(id: Long, view: MediaRequest): PhotoPositionDto {
     val photoEntities = photoEntitiesCache[view] ?: return PhotoPositionDto.empty(id)
     var curIdx = 0
     var prevId = id

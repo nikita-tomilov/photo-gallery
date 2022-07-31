@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import java.io.File
+import java.time.Instant
 import javax.annotation.PostConstruct
 
 @Service
@@ -60,6 +61,10 @@ class MediaLibraryService(
       }
     }
     return null
+  }
+
+  fun find(from: Instant, to: Instant): List<MediaEntity> {
+    return mediaEntityRepository.findAllByParsedDateBetween(from.toEpochMilli(), to.toEpochMilli())
   }
 
   private fun tryAddNewEntities(): List<MediaEntity> {

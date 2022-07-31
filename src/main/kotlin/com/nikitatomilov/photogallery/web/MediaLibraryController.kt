@@ -1,10 +1,14 @@
 package com.nikitatomilov.photogallery.web
 
+import com.nikitatomilov.photogallery.dto.BACK_TO_FOLDER_VIEW
+import com.nikitatomilov.photogallery.dto.BACK_TO_YEAR_VIEW
+import com.nikitatomilov.photogallery.dto.byBackLink
 import com.nikitatomilov.photogallery.service.FilesService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestParam
 import java.io.File
 
@@ -31,21 +35,28 @@ class MediaLibraryController(
     return "folder"
   }
 
+  @GetMapping("/year/{year}")
+  fun viewYear(@PathVariable("year") year: Long, model: Model): String {
+    val contents = filesService.getYearContent(year)
+    model.addAttribute("cur", contents.current)
+    model.addAttribute("parent", contents.parent)
+    model.addAttribute("folders", contents.folders)
+    model.addAttribute("photos", contents.photos)
+    model.addAttribute("back", BACK_TO_YEAR_VIEW + year.toString())
+    return "folder"
+  }
+
   @GetMapping("/file")
   fun viewFile(
     @RequestParam("id") id: Long,
     @RequestParam("back") back: String,
     model: Model): String {
-    val contents = filesService.getPhotoContent(id, File(back.replace(BACK_TO_FOLDER_VIEW, "")))
+    val contents = filesService.getPhotoContent(id, byBackLink(back))
     val photoDto = contents.first
     val positionDto = contents.second
     model.addAttribute("photo", photoDto)
     model.addAttribute("back", back)
     model.addAttribute("pos", positionDto)
     return "file"
-  }
-
-  companion object {
-    private const val BACK_TO_FOLDER_VIEW = "/folder?path="
   }
 }
