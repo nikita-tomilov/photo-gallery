@@ -1,6 +1,6 @@
 <html xmlns="http://www.w3.org/1999/html">
 <head>
-    <title th:text="|File ${cur.displayName}|"></title>
+    <title th:text="|File ${photo.displayName}|"></title>
     <style>
         * {
             margin: 0;
@@ -19,9 +19,12 @@
 </head>
 <body>
 <a th:href="${back}">Back</a>
-<h1 th:text="|File ${cur.displayName}|"></h1>
+<br>
+<a th:href="@{/file(id=${pos.prevId}, back=${back})}">Prev</a>
+<a th:href="@{/file(id=${pos.nextId}, back=${back})}">Next</a>
+<h1 th:text="|[${pos.position}/${pos.total}] ${photo.displayName}|"></h1>
 <div class="imgbox">
-    <img class="center-fit" th:src="${imgLink}" alt="" />
+    <img class="center-fit" th:src="|/image/${photo.id}|" alt="" />
 </div>
 </body>
 </html>

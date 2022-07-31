@@ -26,7 +26,7 @@ class MediaLibraryController(
     model.addAttribute("cur", contents.current)
     model.addAttribute("folders", contents.folders)
     model.addAttribute("photos", contents.photos)
-    model.addAttribute("back", "/folder?path=$path")
+    model.addAttribute("back", BACK_TO_FOLDER_VIEW + path)
     return "folder"
   }
 
@@ -35,10 +35,16 @@ class MediaLibraryController(
     @RequestParam("id") id: Long,
     @RequestParam("back") back: String,
     model: Model): String {
-    val contents = filesService.getPhotoContent(id)
-    model.addAttribute("cur", contents)
+    val contents = filesService.getPhotoContent(id, File(back.replace(BACK_TO_FOLDER_VIEW, "")))
+    val photoDto = contents.first
+    val positionDto = contents.second
+    model.addAttribute("photo", photoDto)
     model.addAttribute("back", back)
-    model.addAttribute("imgLink", "/image/${contents.id}")
+    model.addAttribute("pos", positionDto)
     return "file"
+  }
+
+  companion object {
+    private const val BACK_TO_FOLDER_VIEW = "/folder?path="
   }
 }
