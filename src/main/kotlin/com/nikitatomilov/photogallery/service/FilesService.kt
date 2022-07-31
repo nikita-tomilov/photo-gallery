@@ -23,20 +23,13 @@ class FilesService(
     if (!(isCorrectRequest(file) && file.isDirectory)) return FolderWithContentsDto.empty(file)
     val cur = FolderDto(file)
     val subDirs = file.listFiles()?.filter { it.isDirectory }?.sortedBy { it.name } ?: emptyList()
-    val photos = file.listFiles()?.filter { it.isPhoto() }?.sortedBy { it.name } ?: emptyList()
+    val photos = file.listFiles()?.filter { it.isPhoto() }?.sortedBy { it } ?: emptyList()
     val photoEntities = photoEntitiesCache.getOrPut(file) {
-      photos.mapNotNull { mediaLibraryService.find(it) }
+      photos.mapNotNull { mediaLibraryService.find(it) }.sortedBy { it.getDate() }
     }
-
-    //    photoEntities.forEachIndexed { i, it ->
-    //      val idx = it.id!!
-    //      val idxPrev = if (i > 0) photoEntities[i - 1].id!! else photoEntities.last().id!!
-    //      val idxNext =
-    //          if (i < photoEntities.size - 1) photoEntities[i + 1].id!! else photoEntities.first().id!!
-    //      val relatives = relativesCache.getOrPut(idx) { HashMap() }
-    //      relatives[file] = idxPrev to idxNext
-    //    }
-    return FolderWithContentsDto(cur,
+    return FolderWithContentsDto(
+        cur,
+        getParent(file),
         subDirs.map { FolderDto(it) },
         photoEntities.map { it.toPhotoDto() }
     )
@@ -58,6 +51,17 @@ class FilesService(
     return false
   }
 
+  private fun getParent(f: File): FolderDto {
+    val roots = mediaLibraryService.getRootDirs().map { it.absolutePath }.toSet()
+    if (roots.contains(f.absolutePath)) return FolderDto(f)
+    val parent = f.parentFile
+    return if (isCorrectRequest(parent)) {
+      FolderDto(parent)
+    } else {
+      FolderDto(f)
+    }
+  }
+
   private fun getPosition(id: Long, view: File): PhotoPositionDto {
     val photoEntities = photoEntitiesCache[view] ?: return PhotoPositionDto.empty(id)
     var curIdx = 0
@@ -77,7 +81,7 @@ class FilesService(
     return PhotoPositionDto(id, prevId, nextId, curIdx + 1, photoEntities.size)
   }
 
-  fun File.contains(f: File): Boolean {
+  private fun File.contains(f: File): Boolean {
     if (f.absolutePath == this.absolutePath) return true
     if (f.parentFile == null) return false
     var cur = f

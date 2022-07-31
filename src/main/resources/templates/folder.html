@@ -70,7 +70,11 @@
     }
 </script>
 <body>
+
 <a href="/">Back to root</a>
+<br>
+<a th:href="@{/folder?path={path}(path=${parent.path})}" th:text="|Up to ${parent.displayName}|"></a>
+
 <h1 th:text="|Folder ${cur.displayName}|"></h1>
 <h3>Folders:</h3>
 <div id="foldersList">

@@ -24,6 +24,7 @@ class MediaLibraryController(
   fun viewFolder(@RequestParam("path") path: String, model: Model): String {
     val contents = filesService.getFolderContent(File(path))
     model.addAttribute("cur", contents.current)
+    model.addAttribute("parent", contents.parent)
     model.addAttribute("folders", contents.folders)
     model.addAttribute("photos", contents.photos)
     model.addAttribute("back", BACK_TO_FOLDER_VIEW + path)
