@@ -31,7 +31,7 @@ class PreviewService(
       val dim = min(rect.width, rect.height)
       Thumbnails.of(source)
           .sourceRegion(Positions.CENTER, dim, dim)
-          .size(128, 128)
+          .size(256, 256)
           .toFile(target)
       target
     } catch (e: Exception) {

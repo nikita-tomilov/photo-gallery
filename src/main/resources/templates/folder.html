@@ -1,10 +1,15 @@
 <html xmlns="http://www.w3.org/1999/html">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
     <title th:text="|Folder ${cur.displayName}|"></title>
 </head>
 <style>
-    .photoContainer {
+    .listContainer {
+        text-align: center;
+    }
+
+    .itemContainer {
         display: inline-block;
         width: 128px;
         height: 128px;
@@ -15,7 +20,13 @@
         border: 1px solid black; /*not required*/
         position: relative;
     }
-    .photoInternals {
+
+    .increaseOnHover:hover {
+        transform: scale(2);
+        z-index: 1000;
+    }
+
+    .itemContents {
         max-height: 100%;
         max-width: 100%;
         width: auto;
@@ -62,16 +73,25 @@
 <a href="/">Back to root</a>
 <h1 th:text="|Folder ${cur.displayName}|"></h1>
 <h3>Folders:</h3>
-<div th:each="folder:${folders}">
-    <a th:href="@{/folder?path={path}(path=${folder.path})}" th:text="${folder.displayName}"></a>
+<div id="foldersList">
+    <div th:each="folder:${folders}" class="itemContainer">
+        <a th:href="@{/folder?path={path}(path=${folder.path})}">
+            <div class="itemContents">
+                <img src="/res/folder.svg" alt="folder"/>
+                <span th:text="${folder.displayName}"></span>
+            </div>
+        </a>
+    </div>
 </div>
 <h3>Files:</h3>
 <!--<button type="button" onclick="sortPhotosByName(compareById)">By Name</button>-->
 <!--<button type="button" onclick="sortPhotosByName(compareByTs)">By Timestamp</button>-->
-<div id="filesList">
-    <div th:each="photo:${photos}" class="photoContainer" th:id="${photo.displayName}" th:data-ts="${photo.timestamp}">
+<div id="filesList" class="listContainer">
+    <div th:each="photo:${photos}" class="itemContainer increaseOnHover"
+         th:id="${photo.displayName}" th:data-ts="${photo.timestamp}">
         <a th:href="@{/file(id=${photo.id}, back=${back})}">
-            <img th:src="|/image/preview/${photo.id}|" th:alt="${photo.displayName}" class="photoInternals"/>
+            <img th:src="|/image/preview/${photo.id}|" th:alt="${photo.displayName}"
+                 class="itemContents"/>
         </a>
     </div>
 </div>
