@@ -58,11 +58,8 @@ class MediaLibraryController(
     val positionDto = contents.second
     model.addAttribute("back", back)
     model.addAttribute("pos", positionDto)
-    if (fileDto.type == MediaFileTypeDto.VIDEO) {
-      model.addAttribute("video", fileDto)
-      return "file-video"
-    }
-    model.addAttribute("photo", fileDto)
-    return "file-photo"
+    model.addAttribute("file", fileDto)
+    model.addAttribute("type", if (fileDto.type == MediaFileTypeDto.VIDEO) "VID" else "IMG")
+    return "file"
   }
 }
