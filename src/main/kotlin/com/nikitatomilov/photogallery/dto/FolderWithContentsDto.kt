@@ -6,7 +6,7 @@ data class FolderWithContentsDto(
   val current: FolderDto,
   val parent: FolderDto,
   val folders: List<FolderDto>,
-  val photos: List<PhotoDto>
+  val files: List<MediaFileDto>
 ) {
 
   companion object {

@@ -2,6 +2,7 @@ package com.nikitatomilov.photogallery.web
 
 import com.nikitatomilov.photogallery.dto.BACK_TO_FOLDER_VIEW
 import com.nikitatomilov.photogallery.dto.BACK_TO_YEAR_VIEW
+import com.nikitatomilov.photogallery.dto.MediaFileTypeDto
 import com.nikitatomilov.photogallery.dto.byBackLink
 import com.nikitatomilov.photogallery.service.FilesService
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,7 +31,7 @@ class MediaLibraryController(
     model.addAttribute("cur", contents.current)
     model.addAttribute("parent", contents.parent)
     model.addAttribute("folders", contents.folders)
-    model.addAttribute("photos", contents.photos)
+    model.addAttribute("files", contents.files)
     model.addAttribute("back", BACK_TO_FOLDER_VIEW + path)
     return "folder"
   }
@@ -41,7 +42,7 @@ class MediaLibraryController(
     model.addAttribute("cur", contents.current)
     model.addAttribute("parent", contents.parent)
     model.addAttribute("folders", contents.folders)
-    model.addAttribute("photos", contents.photos)
+    model.addAttribute("files", contents.files)
     model.addAttribute("back", BACK_TO_YEAR_VIEW + year.toString())
     return "folder"
   }
@@ -50,13 +51,18 @@ class MediaLibraryController(
   fun viewFile(
     @RequestParam("id") id: Long,
     @RequestParam("back") back: String,
-    model: Model): String {
+    model: Model
+  ): String {
     val contents = filesService.getPhotoContent(id, byBackLink(back))
-    val photoDto = contents.first
+    val fileDto = contents.first
     val positionDto = contents.second
-    model.addAttribute("photo", photoDto)
     model.addAttribute("back", back)
     model.addAttribute("pos", positionDto)
-    return "file"
+    if (fileDto.type == MediaFileTypeDto.VIDEO) {
+      model.addAttribute("video", fileDto)
+      return "file-video"
+    }
+    model.addAttribute("photo", fileDto)
+    return "file-photo"
   }
 }

@@ -14,8 +14,7 @@
         width: 128px;
         height: 128px;
         margin: 4px;
-        /*background-color: blue;*/
-
+        background-color: white;
         vertical-align: top; /*not required*/
         border: 1px solid black; /*not required*/
         position: relative;
@@ -91,10 +90,10 @@
 <!--<button type="button" onclick="sortPhotosByName(compareById)">By Name</button>-->
 <!--<button type="button" onclick="sortPhotosByName(compareByTs)">By Timestamp</button>-->
 <div id="filesList" class="listContainer">
-    <div th:each="photo:${photos}" class="itemContainer increaseOnHover"
-         th:id="${photo.displayName}" th:data-ts="${photo.timestamp}">
-        <a th:href="@{/file(id=${photo.id}, back=${back})}">
-            <img th:src="|/image/preview/${photo.id}|" th:alt="${photo.displayName}"
+    <div th:each="file:${files}" class="itemContainer increaseOnHover"
+         th:id="${file.displayName}" th:data-ts="${file.timestamp}">
+        <a th:href="@{/file(id=${file.id}, back=${back})}">
+            <img th:src="|/preview/${file.id}|" th:alt="${file.displayName}"
                  class="itemContents"/>
         </a>
     </div>

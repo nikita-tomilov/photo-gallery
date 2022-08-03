@@ -1,0 +1,32 @@
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <title th:text="|Video ${video.displayName}|"></title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        .imgbox {
+            display: grid;
+            height: 100%;
+        }
+        .center-fit {
+            max-width: 100%;
+            max-height: 100vh;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+<a th:href="${back}">Back</a>
+<br>
+<a th:href="@{/file(id=${pos.prevId}, back=${back})}">Prev</a>
+<a th:href="@{/file(id=${pos.nextId}, back=${back})}">Next</a>
+<h1 th:text="|[${pos.position}/${pos.total}] ${video.displayName} - ${video.parsedDate}|"></h1>
+<div class="imgbox">
+    <video class="center-fit" autoplay="autoplay" controls>
+        <source th:src="|/video/${video.id}|">
+    </video>
+</div>
+</body>
+</html>

@@ -5,6 +5,7 @@ import java.lang.Long.min
 import java.text.SimpleDateFormat
 import java.time.Instant
 
+fun File.isMediaFile() = this.isPhoto() || this.isVideo()
 fun File.isPhoto() = (this.isFile) && setOf("jpg", "png").contains(this.extension.lowercase())
 fun File.isVideo() = (this.isFile) && setOf("avi", "mp4").contains(this.extension.lowercase())
 val lowerThreshold = Instant.parse("2000-01-01T00:00:00.00Z").toEpochMilli()

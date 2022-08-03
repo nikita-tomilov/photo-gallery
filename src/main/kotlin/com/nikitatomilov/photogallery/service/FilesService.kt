@@ -2,12 +2,11 @@ package com.nikitatomilov.photogallery.service
 
 import com.nikitatomilov.photogallery.dao.MediaEntity
 import com.nikitatomilov.photogallery.dto.*
-import com.nikitatomilov.photogallery.util.isPhoto
+import com.nikitatomilov.photogallery.util.isMediaFile
+import com.nikitatomilov.photogallery.util.isVideo
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.io.File
-import java.text.SimpleDateFormat
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneOffset
@@ -25,7 +24,7 @@ class FilesService(
     if (!(isCorrectRequest(folder) && folder.isDirectory)) return FolderWithContentsDto.empty(folder)
     val cur = FolderDto(folder)
     val subDirs = folder.listFiles()?.filter { it.isDirectory }?.sortedBy { it.name } ?: emptyList()
-    val photos = folder.listFiles()?.filter { it.isPhoto() }?.sortedBy { it } ?: emptyList()
+    val photos = folder.listFiles()?.filter { it.isMediaFile() }?.sortedBy { it } ?: emptyList()
     val photoEntities = photoEntitiesCache.getOrPut(FolderRequest(folder)) {
       photos.mapNotNull { mediaLibraryService.find(it) }.sortedBy { it.getDate() }
     }
@@ -57,9 +56,12 @@ class FilesService(
     )
   }
 
-  fun getPhotoContent(id: Long, originalRequest: MediaRequest): Pair<PhotoDto, PhotoPositionDto> {
+  fun getPhotoContent(
+    id: Long,
+    originalRequest: MediaRequest
+  ): Pair<MediaFileDto, MediaFilePositionDto> {
     val entity = mediaLibraryService.find(id)
-      ?: return PhotoDto.empty(File("$id")) to PhotoPositionDto.empty(id)
+      ?: return MediaFileDto.empty(File("$id")) to MediaFilePositionDto.empty(id)
     val photoDto = entity.toPhotoDto()
     val photoPosition = getPosition(entity.id!!, originalRequest)
     return photoDto to photoPosition
@@ -84,8 +86,8 @@ class FilesService(
     }
   }
 
-  private fun getPosition(id: Long, view: MediaRequest): PhotoPositionDto {
-    val photoEntities = photoEntitiesCache[view] ?: return PhotoPositionDto.empty(id)
+  private fun getPosition(id: Long, view: MediaRequest): MediaFilePositionDto {
+    val photoEntities = photoEntitiesCache[view] ?: return MediaFilePositionDto.empty(id)
     var curIdx = 0
     var prevId = id
     var nextId = id
@@ -100,7 +102,7 @@ class FilesService(
         nextId = photoEntities[nextIdx].id!!
       }
     }
-    return PhotoPositionDto(id, prevId, nextId, curIdx + 1, photoEntities.size)
+    return MediaFilePositionDto(id, prevId, nextId, curIdx + 1, photoEntities.size)
   }
 
   private fun File.contains(f: File): Boolean {
@@ -116,5 +118,10 @@ class FilesService(
   }
 
   private fun MediaEntity.toPhotoDto() =
-      PhotoDto(this.id!!, this.fileName, this.fullPath, this.getDate())
+      MediaFileDto(
+          this.id!!,
+          this.fileName,
+          this.fullPath,
+          this.getDate(),
+          if (File(this.fullPath).isVideo()) MediaFileTypeDto.VIDEO else MediaFileTypeDto.PHOTO)
 }

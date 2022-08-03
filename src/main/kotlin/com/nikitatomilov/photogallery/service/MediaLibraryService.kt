@@ -4,6 +4,7 @@ import com.nikitatomilov.photogallery.dao.FilesystemMediaEntity
 import com.nikitatomilov.photogallery.dao.MediaEntity
 import com.nikitatomilov.photogallery.dao.MediaEntityRepository
 import com.nikitatomilov.photogallery.dto.FolderDto
+import com.nikitatomilov.photogallery.util.isMediaFile
 import com.nikitatomilov.photogallery.util.isPhoto
 import com.nikitatomilov.photogallery.util.isVideo
 import mu.KLogging
@@ -76,7 +77,7 @@ class MediaLibraryService(
       error("${fromDir.absolutePath} is not a directory")
     }
     val allFiles = fromDir.walkTopDown().map { it }.toList()
-    return allFiles.filter { it.isPhoto() || it.isVideo() }
+    return allFiles.filter { it.isMediaFile() }
   }
 
   private fun tryAddNewEntities(files: Map<File, List<File>>): List<MediaEntity> {
