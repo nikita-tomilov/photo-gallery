@@ -123,5 +123,5 @@ class FilesService(
           this.fileName,
           this.fullPath,
           this.getDate(),
-          if (File(this.fullPath).isVideo()) MediaFileTypeDto.VIDEO else MediaFileTypeDto.PHOTO)
+          if (this.asFile().isVideo()) MediaFileTypeDto.VIDEO else MediaFileTypeDto.PHOTO)
 }

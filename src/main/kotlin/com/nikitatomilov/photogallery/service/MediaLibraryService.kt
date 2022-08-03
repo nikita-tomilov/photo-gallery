@@ -3,10 +3,7 @@ package com.nikitatomilov.photogallery.service
 import com.nikitatomilov.photogallery.dao.FilesystemMediaEntity
 import com.nikitatomilov.photogallery.dao.MediaEntity
 import com.nikitatomilov.photogallery.dao.MediaEntityRepository
-import com.nikitatomilov.photogallery.dto.FolderDto
 import com.nikitatomilov.photogallery.util.isMediaFile
-import com.nikitatomilov.photogallery.util.isPhoto
-import com.nikitatomilov.photogallery.util.isVideo
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -19,7 +16,8 @@ import javax.annotation.PostConstruct
 @Service
 class MediaLibraryService(
   @Value("\${lib.location}") private val rootPaths: Array<String>,
-  @Autowired private val mediaEntityRepository: MediaEntityRepository
+  @Autowired private val mediaEntityRepository: MediaEntityRepository,
+  @Autowired private val previewService: PreviewService
 ) {
 
   private lateinit var rootDirs: List<File>
@@ -33,10 +31,15 @@ class MediaLibraryService(
     val existing = ensureIndexedEntitiesExistInFilesystem()
     val new = tryAddNewEntities()
     logger.warn { "${existing.size} entities already in DB, ${new.size} entities added" }
-    val all = mediaEntityRepository.count()
-    if (all != (existing.size.toLong() + new.size)) {
+    val all = mediaEntityRepository.findAll()
+    if (all.size != (existing.size + new.size)) {
       error("Entities count mismatch: $all != ${existing.size} + ${new.size}")
     }
+    /* logger.warn { "Updating thumbnails..." }
+    all.parallelStream().forEach {
+      previewService.getImagePreview(it)
+    }
+    logger.warn { "Updating thumbnails done" } */
   }
 
   fun getRootDirs(): List<File> = rootDirs
@@ -100,7 +103,7 @@ class MediaLibraryService(
     logger.warn { "${existing.size} entities exist in the DB" }
     val nonExistingAnymore = ArrayList<MediaEntity>()
     existing.forEach {
-      if (!File(it.fullPath).exists()) {
+      if (!it.asFile().exists()) {
         nonExistingAnymore.add(it)
       }
     }

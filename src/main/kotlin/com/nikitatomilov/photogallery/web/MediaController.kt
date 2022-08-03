@@ -14,7 +14,6 @@ import org.springframework.util.StreamUtils
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestHeader
-import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.lang.Long.min
@@ -28,7 +27,7 @@ class MediaController(
   @GetMapping("/photo/{id}", produces = [MediaType.IMAGE_JPEG_VALUE])
   fun downloadImage(@PathVariable("id") id: Long): ResponseEntity<ByteArray> {
     val entity = mediaLibraryService.find(id) ?: return ResponseEntity.notFound().build()
-    val bytes = StreamUtils.copyToByteArray(FileInputStream(File(entity.fullPath)))
+    val bytes = StreamUtils.copyToByteArray(FileInputStream(entity.asFile()))
     return ResponseEntity
         .ok()
         .contentType(MediaType.IMAGE_JPEG)
@@ -38,18 +37,14 @@ class MediaController(
   @GetMapping("/preview/{id}", produces = [MediaType.IMAGE_JPEG_VALUE])
   fun downloadPreview(@PathVariable("id") id: Long): ResponseEntity<ByteArray> {
     val entity = mediaLibraryService.find(id) ?: return ResponseEntity.notFound().build()
-    val bytes = StreamUtils.copyToByteArray(
-        FileInputStream(
-            previewService.getImagePreview(
-                entity.id!!,
-                entity.fullPath)))
+    val bytes = StreamUtils.copyToByteArray(FileInputStream(previewService.getImagePreview(entity)))
     return ResponseEntity
         .ok()
         .contentType(MediaType.IMAGE_JPEG)
         .body(bytes);
   }
 
-  @GetMapping("/video/{id}", produces = ["application/octet-stream"])
+  @GetMapping("/video/{id}", produces = [MediaType.APPLICATION_OCTET_STREAM_VALUE])
   fun streamVideo(
     @PathVariable("id") id: Long,
     @RequestHeader(value = "Range", required = false) rangeHeader: String?
