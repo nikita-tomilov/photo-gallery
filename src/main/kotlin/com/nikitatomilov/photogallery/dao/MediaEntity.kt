@@ -1,6 +1,7 @@
 package com.nikitatomilov.photogallery.dao
 
 import java.io.File
+import java.time.Instant
 import javax.persistence.*
 
 @Entity
@@ -21,6 +22,8 @@ data class MediaEntity(
     if (override != null) return override
     return parsedDate
   }
+
+  fun getInstant(): Instant = Instant.ofEpochMilli(getDate())
 
   fun asFile(): File = File(this.fullPath)
 }
