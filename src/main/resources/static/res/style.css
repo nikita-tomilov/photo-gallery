@@ -1,0 +1,46 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+.imgbox {
+    display: grid;
+    height: 100%;
+}
+.center-fit {
+    max-width: 100%;
+    max-height: 100vh;
+    margin: auto;
+}
+
+.listContainer {
+    text-align: center;
+}
+
+.itemContainer {
+    display: inline-block;
+    width: 128px;
+    height: 128px;
+    margin: 4px;
+    background-color: white;
+    vertical-align: top; /*not required*/
+    border: 1px solid black; /*not required*/
+    position: relative;
+}
+
+.increaseOnHover:hover {
+    transform: scale(2);
+    z-index: 1000;
+}
+
+.itemContents {
+    max-height: 100%;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+}

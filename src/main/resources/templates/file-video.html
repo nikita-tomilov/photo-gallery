@@ -1,21 +1,7 @@
 <html xmlns="http://www.w3.org/1999/html">
 <head>
     <title th:text="|Video ${video.displayName}|"></title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-        }
-        .imgbox {
-            display: grid;
-            height: 100%;
-        }
-        .center-fit {
-            max-width: 100%;
-            max-height: 100vh;
-            margin: auto;
-        }
-    </style>
+    <link rel="stylesheet" href="/res/style.css">
 </head>
 <body>
 <a th:href="${back}">Back</a>

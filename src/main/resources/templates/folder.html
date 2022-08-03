@@ -3,92 +3,32 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
     <title th:text="|Folder ${cur.displayName}|"></title>
+    <link rel="stylesheet" href="/res/style.css">
 </head>
-<style>
-    .listContainer {
-        text-align: center;
-    }
-
-    .itemContainer {
-        display: inline-block;
-        width: 128px;
-        height: 128px;
-        margin: 4px;
-        background-color: white;
-        vertical-align: top; /*not required*/
-        border: 1px solid black; /*not required*/
-        position: relative;
-    }
-
-    .increaseOnHover:hover {
-        transform: scale(2);
-        z-index: 1000;
-    }
-
-    .itemContents {
-        max-height: 100%;
-        max-width: 100%;
-        width: auto;
-        height: auto;
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        margin: auto;
-    }
-</style>
-<script lang="js">
-
-    function compareById(a, b) {
-        var aord = +a.id;
-        var bord = +b.id;
-        return ((aord > bord) ? 1 : -1);
-    }
-
-    function compareByTs(a, b) {
-        var aord = +a.ts;
-        var bord = +b.ts;
-        return ((aord > bord) ? 1 : -1);
-    }
-
-    function sortPhotosByName(func) {
-        var parent = document.getElementById('filesList')
-        var items = parent.children;
-        items = Array.prototype.slice.call(items, 0);
-
-        items.sort(function (a, b) {
-            return func(a, b)
-        });
-
-        parent.innerHTML = "";
-
-        for (var i = 0, l = items.length; i < l; i++) {
-            parent.appendChild(items[i]);
-        }
-    }
-</script>
 <body>
 
 <a href="/">Back to root</a>
 <br>
-<a th:href="@{/folder?path={path}(path=${parent.path})}" th:text="|Up to ${parent.displayName}|"></a>
+<a th:href="@{/folder?path={path}(path=${parent.path})}"
+   th:text="|Up to ${parent.displayName}|"></a>
 
 <h1 th:text="|Folder ${cur.displayName}|"></h1>
 <h3>Folders:</h3>
-<div id="foldersList">
-    <div th:each="folder:${folders}" class="itemContainer">
-        <a th:href="@{/folder?path={path}(path=${folder.path})}">
-            <div class="itemContents">
-                <img src="/res/folder.svg" alt="folder"/>
-                <span th:text="${folder.displayName}"></span>
-            </div>
-        </a>
-    </div>
-</div>
+<table>
+    <tr th:each="folder:${folders}">
+        <td>
+            <a th:href="@{/folder?path={path}(path=${folder.path})}">
+                <img src="/res/folder.svg" alt="folder" width="24px"/>
+            </a>
+        </td>
+        <td>
+            <a th:href="@{/folder?path={path}(path=${folder.path})}"
+               th:text="${folder.displayName}"></a>
+        </td>
+    </tr>
+</table>
+
 <h3>Files:</h3>
-<!--<button type="button" onclick="sortPhotosByName(compareById)">By Name</button>-->
-<!--<button type="button" onclick="sortPhotosByName(compareByTs)">By Timestamp</button>-->
 <div id="filesList" class="listContainer">
     <div th:each="file:${files}" class="itemContainer increaseOnHover"
          th:id="${file.displayName}" th:data-ts="${file.timestamp}">
