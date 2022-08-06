@@ -46,7 +46,7 @@ class FilesService(
       val f = ZoneOffset.UTC
       val from = LocalDate.of(year.toInt(), 1, 1).atStartOfDay().toInstant(f)
       val to = LocalDate.of(year.toInt(), 12, 31).atTime(LocalTime.MAX).toInstant(f)
-      mediaLibraryService.find(from, to).sortedBy { it.getDate() }
+      mediaLibraryService.find(from, to).sortedBy { it.getDate() }.filter { it.isFinal }
     }
     return FolderWithContentsDto(
         FolderDto(year.toString(), "dummy-path"),

@@ -4,6 +4,7 @@ import com.nikitatomilov.photogallery.dao.FilesystemMediaEntity
 import com.nikitatomilov.photogallery.dao.MediaEntity
 import com.nikitatomilov.photogallery.dao.MediaEntityRepository
 import com.nikitatomilov.photogallery.util.isMediaFile
+import com.nikitatomilov.photogallery.util.pathWithoutName
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -17,7 +18,8 @@ import javax.annotation.PostConstruct
 class MediaLibraryService(
   @Value("\${lib.location}") private val rootPaths: Array<String>,
   @Autowired private val mediaEntityRepository: MediaEntityRepository,
-  @Autowired private val previewService: PreviewService
+  @Autowired private val previewService: PreviewService,
+  @Autowired private val fileMetadataExtractorService: FileMetadataExtractorService
 ) {
 
   private lateinit var rootDirs: List<File>
@@ -35,6 +37,7 @@ class MediaLibraryService(
     if (all.size != (existing.size + new.size)) {
       error("Entities count mismatch: $all != ${existing.size} + ${new.size}")
     }
+    logger.warn { "Overall there are ${all.size} entities in the database that <seem> unique" }
     /* logger.warn { "Updating thumbnails..." }
     all.parallelStream().forEach {
       previewService.getImagePreview(it)
@@ -50,20 +53,31 @@ class MediaLibraryService(
   }
 
   fun find(file: File): MediaEntity? {
-    val existingByName = mediaEntityRepository.findAllByFileName(file.name)
-    if (existingByName.isNotEmpty()) {
-      val existingByPath = mediaEntityRepository.findAllByFullPath(file.absolutePath)
-      if (existingByPath.size > 1) {
-        logger.error { "Too many entities: $existingByPath" }
-        return existingByPath.random()
-      }
-      if (existingByPath.size == 1) {
-        val found = existingByPath.single()
-        if (found.fullPath == file.absolutePath) {
-          return found
-        }
+    val existingByName = mediaEntityRepository.findByFileName(file.name)
+    if (existingByName.isEmpty()) return null
+
+    val existingByPath = mediaEntityRepository.findByFullPath(file.absolutePath)
+    if (existingByPath.size > 1) {
+      logger.error { "Too many entities in the database for a single absolute path: $existingByPath" }
+      return existingByPath.random()
+    }
+    if (existingByPath.size == 1) {
+      val found = existingByPath.single()
+      if (found.fullPath == file.absolutePath) {
+        return found
+      } else {
+        logger.error { "Found entity with same name but different path: $found for $file" }
       }
     }
+
+    existingByName.forEach { existing ->
+      val existingFile = existing.asFile()
+      val existingTimestamp = fileMetadataExtractorService.extractTimestamp(existingFile)
+      val timestamp = fileMetadataExtractorService.extractTimestamp(file)
+      if (existingTimestamp == timestamp) return existing
+    }
+
+    val i = 1
     return null
   }
 
@@ -88,11 +102,16 @@ class MediaLibraryService(
         files.map { (fromDir, files) -> files.map { FilesystemMediaEntity(fromDir, it) } }.flatten()
     logger.warn { "Found ${mediaFiles.size} media files in the filesystem. Parsing metadata..." }
     val newEntities = ArrayList<MediaEntity>()
+    val n = mediaFiles.size
     mediaFiles.forEachIndexed { i, it ->
       val existing = find(it.file)
       if (existing == null) {
-        val new = indexNew(it, i, mediaFiles.size)
+        val new = indexNew(it, i, n)
         if (new != null) newEntities.add(new)
+      } else {
+        if (existing.asFile().absolutePath != it.file.absolutePath) {
+          logger.info { "[$i/$n] ${it.file.absolutePath} seems to be a clone of ${existing.fullPath}" }
+        }
       }
     }
     return newEntities
@@ -117,27 +136,40 @@ class MediaLibraryService(
 
   private fun indexNew(fsEntity: FilesystemMediaEntity, i: Int, n: Int): MediaEntity? {
     var fileSeemsBroken = false
+    var fsEntityWithMetadata: FilesystemMediaEntity = fsEntity
     try {
-      fsEntity.parseMetadata()
+      val timestamp = fileMetadataExtractorService.extractTimestamp(fsEntity.file)
+      fsEntityWithMetadata = fsEntityWithMetadata.withNewTimestamp(timestamp.first, timestamp.second)
     } catch (e: Exception) {
       logger.error(e) { "Error on file ${fsEntity.file.absolutePath} " }
       fileSeemsBroken = true
     }
     val new = MediaEntity(
         null,
-        fsEntity.file.name,
-        fsEntity.file.absolutePath,
-        fsEntity.date,
+        fsEntityWithMetadata.file.name,
+        fsEntityWithMetadata.file.absolutePath,
+        fsEntityWithMetadata.timestamp,
         null,
-        fileSeemsBroken)
+        fileSeemsBroken,
+        determineIfFileIsFinal(fsEntity.file))
     try {
-      val saved = mediaEntityRepository.save(new)
-      logger.info { "[$i/$n] ${fsEntity.file.absolutePath} saved with id ${saved.id}" }
+      val saved = mediaEntityRepository.saveAndFlush(new)
+      logger.info { "[$i/$n] ${fsEntityWithMetadata.file.absolutePath} saved with id ${saved.id}" }
       return saved
     } catch (e: Exception) {
       logger.error(e) { "Error on saving entity $new" }
     }
     return null
+  }
+
+  private fun determineIfFileIsFinal(file: File): Boolean {
+    //if "burned" directory exists next to a photo, this means, that this file is just a 'dummy'
+    //jpeg, and later for the calendar views we shall look for photos only inside this 'burned' dir
+    val burnedDirectory = File(file.pathWithoutName(), "burned")
+    if (burnedDirectory.exists() && burnedDirectory.isDirectory) {
+      return false
+    }
+    return true
   }
 
   companion object : KLogging()

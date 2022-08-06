@@ -13,8 +13,9 @@ data class MediaEntity(
   @Column(nullable = false) var fileName: String,
   @Column(nullable = false) var fullPath: String,
   @Column(nullable = false) var parsedDate: Long,
-  @Column(nullable = true) var overrideDate: Long? = null,
-  @Column(nullable = false) var isBroken: Boolean = false
+  @Column(nullable = true) var overrideDate: Long?,
+  @Column(nullable = false) var isBroken: Boolean,
+  @Column(nullable = false) var isFinal: Boolean
 ) {
 
   fun getDate(): Long {

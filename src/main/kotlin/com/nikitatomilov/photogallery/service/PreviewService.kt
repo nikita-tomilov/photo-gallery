@@ -2,6 +2,7 @@ package com.nikitatomilov.photogallery.service
 
 import com.nikitatomilov.photogallery.dao.MediaEntity
 import com.nikitatomilov.photogallery.util.isVideo
+import com.nikitatomilov.photogallery.util.pathWithoutName
 import mu.KLogging
 import net.coobird.thumbnailator.Thumbnails
 import net.coobird.thumbnailator.filters.ImageFilter
@@ -32,6 +33,10 @@ class PreviewService(
     private const val FONT_SIZE = 20
     private val FONT = Font(Font.SERIF, Font.PLAIN, FONT_SIZE)
     private const val PREVIEW_WIDTH = 256
+  }
+
+  init {
+    if (!File(previewLocation).exists()) File(previewLocation).mkdirs()
   }
 
   fun getImagePreview(entity: MediaEntity): File {

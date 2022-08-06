@@ -6,8 +6,18 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 
 fun File.isMediaFile() = this.isPhoto() || this.isVideo()
-fun File.isPhoto() = (this.isFile) && setOf("jpg", "png").contains(this.extension.lowercase())
-fun File.isVideo() = (this.isFile) && setOf("avi", "mp4").contains(this.extension.lowercase())
+fun File.isPhoto() = this.isFileWithExtension(setOf("jpg", "png")) && this.isNotMacosPreview()
+fun File.isVideo() = this.isFileWithExtension(setOf("avi", "mp4")) && this.isNotMacosPreview()
+fun File.pathWithoutName() = this.absolutePath.replace(this.name, "")
+
+fun File.isFileWithExtension(extensions: Set<String>): Boolean {
+  return (this.isFile) && extensions.contains(this.extension.lowercase())
+}
+
+fun File.isNotMacosPreview(): Boolean {
+  return !this.name.startsWith("._")
+}
+
 val lowerThreshold = Instant.parse("2000-01-01T00:00:00.00Z").toEpochMilli()
 
 val filenameRegexes: Map<Regex, (String) -> Long> =
