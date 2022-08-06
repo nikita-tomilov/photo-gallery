@@ -51,6 +51,8 @@ class FileMetadataExtractorService {
   }
 
   private fun parseFilename(file: File): Long? {
+    //TODO: add some check or something for when 190916
+    // is 19 Sep 2016 and not (as would a normal person assume) 16 Sep 2019
     val name = file.nameWithoutExtension
     if (name.removeNonDigits() == name) {
       val number = name.toLong()

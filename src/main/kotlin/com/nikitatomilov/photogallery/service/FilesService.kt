@@ -3,10 +3,12 @@ package com.nikitatomilov.photogallery.service
 import com.nikitatomilov.photogallery.dao.MediaEntity
 import com.nikitatomilov.photogallery.dto.*
 import com.nikitatomilov.photogallery.util.isMediaFile
+import com.nikitatomilov.photogallery.util.isSoftSymlink
 import com.nikitatomilov.photogallery.util.isVideo
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.io.File
+import java.nio.file.Files
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneOffset
@@ -24,7 +26,7 @@ class FilesService(
     if (!(isCorrectRequest(folder) && folder.isDirectory)) return FolderWithContentsDto.empty(folder)
     val cur = FolderDto(folder)
     val subDirs = folder.listFiles()?.filter { it.isDirectory }?.sortedBy { it.name } ?: emptyList()
-    val photos = folder.listFiles()?.filter { it.isMediaFile() }?.sortedBy { it } ?: emptyList()
+    val photos = folder.listMediaFilesExtractingSoftSymlinks().sortedBy { it.name }
     val photoEntities = photoEntitiesCache.getOrPut(FolderRequest(folder)) {
       photos.mapNotNull { mediaLibraryService.find(it) }.sortedBy { it.getDate() }
     }
@@ -103,6 +105,22 @@ class FilesService(
       }
     }
     return MediaFilePositionDto(id, prevId, nextId, curIdx + 1, photoEntities.size)
+  }
+
+  private fun File.listMediaFilesExtractingSoftSymlinks(): List<File> {
+    return this.listFiles()?.mapNotNull {
+      when {
+        it.isMediaFile() -> it
+        it.isSoftSymlink() -> {
+          val symlinkTarget = Files.readAllLines(it.toPath()).firstOrNull()
+          if (symlinkTarget != null) {
+            val symlinkTargetFile = File(symlinkTarget)
+            if (symlinkTargetFile.isMediaFile()) symlinkTargetFile else null
+          } else null
+        }
+        else -> null
+      }
+    } ?: emptyList()
   }
 
   private fun File.contains(f: File): Boolean {
