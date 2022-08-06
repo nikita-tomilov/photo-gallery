@@ -39,12 +39,11 @@ class MediaLibraryController(
   @GetMapping("/year/{year}")
   fun viewYear(@PathVariable("year") year: Long, model: Model): String {
     val contents = filesService.getYearContent(year)
-    model.addAttribute("cur", contents.current)
-    model.addAttribute("parent", contents.parent)
-    model.addAttribute("folders", contents.folders)
-    model.addAttribute("files", contents.files)
+    model.addAttribute("year", contents.year)
+    model.addAttribute("months", contents.months)
+
     model.addAttribute("back", BACK_TO_YEAR_VIEW + year.toString())
-    return "folder"
+    return "year"
   }
 
   @GetMapping("/file")

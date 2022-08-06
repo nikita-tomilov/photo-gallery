@@ -9,9 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.io.File
 import java.nio.file.Files
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.ZoneOffset
+import java.time.*
 
 @Service
 class FilesService(
@@ -38,24 +36,24 @@ class FilesService(
     )
   }
 
-  /*
-  TODO:
-  1) replace FolderWithContentsDto with something
-  2) create new view instead of folder.html for year request, reuse photo grid html
-   */
-  fun getYearContent(year: Long): FolderWithContentsDto {
+  fun getYearContent(year: Long): YearWithContentsDto {
     val photoEntities = photoEntitiesCache.getOrPut(YearlyRequest(year)) {
       val f = ZoneOffset.UTC
       val from = LocalDate.of(year.toInt(), 1, 1).atStartOfDay().toInstant(f)
       val to = LocalDate.of(year.toInt(), 12, 31).atTime(LocalTime.MAX).toInstant(f)
       mediaLibraryService.find(from, to).sortedBy { it.getDate() }.filter { it.isFinal }
     }
-    return FolderWithContentsDto(
-        FolderDto(year.toString(), "dummy-path"),
-        FolderDto(year.toString(), "dummy-parent-path"),
-        emptyList(),
-        photoEntities.map { it.toPhotoDto() }
-    )
+
+    val grouped = photoEntities.groupBy { it.getInstant().atOffset(ZoneOffset.UTC).month }
+
+    return YearWithContentsDto(year.toInt(), Month.values().sortedBy { m -> m.value }.map { m ->
+      val entriesForMonth = grouped.getOrDefault(m, emptyList())
+      MonthWithContentsDto(
+          m.value,
+          m.name,
+          entriesForMonth.map { it.toPhotoDto() }
+      )
+    })
   }
 
   fun getPhotoContent(

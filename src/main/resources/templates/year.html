@@ -1,0 +1,29 @@
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title th:text="|Year ${year}|"></title>
+    <link rel="stylesheet" href="/res/style.css">
+</head>
+<body>
+
+<a href="/">Back to root</a>
+
+<h1 th:text="|Year ${year}|"></h1>
+
+<div th:each="month:${months}">
+    <h3 th:text="|${month.displayName} - ${#lists.size(month.files)} files|"></h3>
+    <div id="filesList" class="listContainer">
+        <div th:each="file:${month.files}" class="itemContainer increaseOnHover"
+             th:id="${file.displayName}" th:data-ts="${file.timestamp}">
+            <a th:href="@{/file(id=${file.id}, back=${back})}">
+                <img th:src="|/preview/${file.id}|" th:alt="${file.displayName}"
+                     class="itemContents"/>
+            </a>
+        </div>
+    </div>
+    <br><br><br>
+</div>
+
+</body>
+</html>

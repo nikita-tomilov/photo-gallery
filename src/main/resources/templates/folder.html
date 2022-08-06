@@ -13,7 +13,7 @@
    th:text="|Up to ${parent.displayName}|"></a>
 
 <h1 th:text="|Folder ${cur.displayName}|"></h1>
-<h3>Folders:</h3>
+<h3 th:text="|Folders: ${#lists.size(folders)}|"></h3>
 <table>
     <tr th:each="folder:${folders}">
         <td>
@@ -28,7 +28,7 @@
     </tr>
 </table>
 
-<h3>Files:</h3>
+<h3 th:text="|Files: ${#lists.size(files)}|"></h3>
 <div id="filesList" class="listContainer">
     <div th:each="file:${files}" class="itemContainer increaseOnHover"
          th:id="${file.displayName}" th:data-ts="${file.timestamp}">
