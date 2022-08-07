@@ -28,3 +28,4 @@ spring:
 
 lib.location: "${LIB_LOC}"
 lib.previewLocation: "/opt/photo-gallery-previews"
+lib.rulesLocation: "/opt/rules.yml"

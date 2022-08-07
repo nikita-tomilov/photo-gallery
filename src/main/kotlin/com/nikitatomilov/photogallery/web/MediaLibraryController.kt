@@ -5,6 +5,7 @@ import com.nikitatomilov.photogallery.dto.BACK_TO_YEAR_VIEW
 import com.nikitatomilov.photogallery.dto.MediaFileTypeDto
 import com.nikitatomilov.photogallery.dto.byBackLink
 import com.nikitatomilov.photogallery.service.FilesService
+import com.nikitatomilov.photogallery.util.NotFoundException
 import com.nikitatomilov.photogallery.util.SecurityUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
@@ -22,16 +23,17 @@ class MediaLibraryController(
 
   @GetMapping("/")
   fun viewRoot(model: Model, principal: Principal): String {
-    val email = SecurityUtils.extractEmail(principal)
-    val folders = filesService.getRootDirs()
+    val email = SecurityUtils.extractEmail(principal) ?: throw NotFoundException()
+    val folders = filesService.getRootDirs(email)
     model.addAttribute("email", email ?: "<unknown>")
     model.addAttribute("folders", folders)
     return "root"
   }
 
   @GetMapping("/folder")
-  fun viewFolder(@RequestParam("path") path: String, model: Model): String {
-    val contents = filesService.getFolderContent(File(path))
+  fun viewFolder(@RequestParam("path") path: String, model: Model, principal: Principal): String {
+    val email = SecurityUtils.extractEmail(principal) ?: throw NotFoundException()
+    val contents = filesService.getFolderContent(email, File(path))
     model.addAttribute("cur", contents.current)
     model.addAttribute("parent", contents.parent)
     model.addAttribute("folders", contents.folders)
@@ -41,8 +43,9 @@ class MediaLibraryController(
   }
 
   @GetMapping("/year/{year}")
-  fun viewYear(@PathVariable("year") year: Long, model: Model): String {
-    val contents = filesService.getYearContent(year)
+  fun viewYear(@PathVariable("year") year: Long, model: Model, principal: Principal): String {
+    val email = SecurityUtils.extractEmail(principal) ?: throw NotFoundException()
+    val contents = filesService.getYearContent(email, year)
     model.addAttribute("year", contents.year)
     model.addAttribute("months", contents.months)
 
@@ -54,9 +57,11 @@ class MediaLibraryController(
   fun viewFile(
     @RequestParam("id") id: Long,
     @RequestParam("back") back: String,
-    model: Model
+    model: Model,
+    principal: Principal
   ): String {
-    val contents = filesService.getPhotoContent(id, byBackLink(back))
+    val email = SecurityUtils.extractEmail(principal) ?: throw NotFoundException()
+    val contents = filesService.getPhotoContent(id, byBackLink(email, back))
     val fileDto = contents.first
     val positionDto = contents.second
     model.addAttribute("back", back)

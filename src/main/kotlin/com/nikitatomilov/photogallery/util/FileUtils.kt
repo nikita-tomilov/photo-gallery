@@ -19,6 +19,18 @@ fun File.isNotMacosPreview(): Boolean {
   return !this.name.startsWith("._")
 }
 
+fun File.contains(f: File): Boolean {
+  if (f.absolutePath == this.absolutePath) return true
+  if (f.parentFile == null) return false
+  var cur = f
+  while (cur != cur.parentFile) {
+    if (cur.absolutePath == this.absolutePath) return true
+    if (cur.parentFile == null) break
+    cur = cur.parentFile
+  }
+  return false
+}
+
 val lowerThreshold = Instant.parse("2000-01-01T00:00:00.00Z").toEpochMilli()
 
 val filenameRegexes: Map<Regex, (String) -> Long> =
