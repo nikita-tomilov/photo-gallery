@@ -1,6 +1,30 @@
+kc:
+  base-url: ${KC_BASE_URL}
+  realm: master
+  realm-url: ${kc.base-url}/realms/${kc.realm}
+
+server:
+  port : ${PORT}
+
 spring:
   datasource:
     url: "jdbc:h2:file:/opt/photo-gallery.h2;MODE=LEGACY;DB_CLOSE_ON_EXIT=TRUE"
+  security:
+    oauth2:
+      client:
+        registration:
+          kc:
+            client-id: spring-test-client
+            client-secret: ${KC_SECRET}
+            provider: keycloak
+            authorization-grant-type: authorization_code
+            scope: openid, profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/kc"
+        provider:
+          keycloak:
+            authorization-uri: ${kc.realm-url}/protocol/openid-connect/auth
+            jwk-set-uri: ${kc.realm-url}/protocol/openid-connect/certs
+            token-uri: ${kc.realm-url}/protocol/openid-connect/token
 
-lib.location: "/media/hotaro/Data/Photos,/media/hotaro/Data/GooglePhotos-All"
+lib.location: "${LIB_LOC}"
 lib.previewLocation: "/opt/photo-gallery-previews"

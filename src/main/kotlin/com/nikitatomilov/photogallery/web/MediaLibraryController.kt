@@ -5,6 +5,7 @@ import com.nikitatomilov.photogallery.dto.BACK_TO_YEAR_VIEW
 import com.nikitatomilov.photogallery.dto.MediaFileTypeDto
 import com.nikitatomilov.photogallery.dto.byBackLink
 import com.nikitatomilov.photogallery.service.FilesService
+import com.nikitatomilov.photogallery.util.SecurityUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestParam
 import java.io.File
+import java.security.Principal
 
 @Controller
 class MediaLibraryController(
@@ -19,8 +21,10 @@ class MediaLibraryController(
 ) {
 
   @GetMapping("/")
-  fun viewRoot(model: Model): String {
+  fun viewRoot(model: Model, principal: Principal): String {
+    val email = SecurityUtils.extractEmail(principal)
     val folders = filesService.getRootDirs()
+    model.addAttribute("email", email ?: "<unknown>")
     model.addAttribute("folders", folders)
     return "root"
   }
