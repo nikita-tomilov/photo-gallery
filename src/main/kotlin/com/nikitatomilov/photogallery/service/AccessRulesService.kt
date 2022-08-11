@@ -7,8 +7,8 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.nikitatomilov.photogallery.dao.MediaEntity
 import com.nikitatomilov.photogallery.dto.AccessRules
 import com.nikitatomilov.photogallery.dto.AccessRulesForUser
+import com.nikitatomilov.photogallery.dto.Rule
 import com.nikitatomilov.photogallery.util.contains
-import com.nikitatomilov.photogallery.util.pathWithoutName
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -22,31 +22,38 @@ class AccessRulesService(
   @Value("\${lib.rulesLocation}") private val accessRulesFile: String
 ) {
 
-  //Allow all by default unless the email is in the rules list; then - whitelist only
   private lateinit var rules: AccessRules
 
   @PostConstruct
   fun readRulesFile() {
     val rulesFile = File(accessRulesFile).toPath()
     if (!rulesFile.exists()) {
-      logger.warn { "No rules file found, whitelisting for all users" }
-      rules = AccessRules(emptyList())
+      logger.warn { "No rules file found, allowing all for all users" }
+      rules = AccessRules(Rule.ALLOW, emptyList())
     }
     rules = ObjectMapper(YAMLFactory()).registerKotlinModule()
         .readValue(Files.readString(rulesFile.toAbsolutePath()))
   }
+
+  fun getRules() = rules.copy()
 
   fun isAllowed(email: String, e: MediaEntity): Boolean {
     return isAllowed(email, e.asFile())
   }
 
   fun isAllowed(email: String, file: File): Boolean {
-    val rules = getRules(email) ?: return true
-    rules.folderWhitelist.forEach {
-      val whitelistedDir = File(it)
-      if (whitelistedDir.contains(file)) return true
-      if (file.isDirectory) {
-        if (file.contains(whitelistedDir)) return true
+    val userRules = getRules(email) ?: return rules.default()
+    if (isInList(file, userRules.folderBlacklist, false)) return false
+    if (isInList(file, userRules.folderWhitelist, true)) return true
+    return userRules.default()
+  }
+
+  private fun isInList(file: File, list: List<String>, reverseLookup: Boolean): Boolean {
+    list.forEach {
+      val dir = File(it)
+      if (dir.contains(file)) return true
+      if (file.isDirectory && reverseLookup) {
+        if (file.contains(dir)) return true
       }
     }
     return false
