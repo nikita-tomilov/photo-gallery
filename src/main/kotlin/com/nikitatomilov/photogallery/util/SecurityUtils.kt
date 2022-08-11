@@ -7,7 +7,11 @@ import java.security.Principal
 
 object SecurityUtils {
 
-  fun extractEmail(principal: Principal?): String? {
+  fun extractEmailOrThrowException(principal: Principal?): String {
+    return extractEmail(principal) ?: throw NotFoundException()
+  }
+
+  private fun extractEmail(principal: Principal?): String? {
     if (principal == null) return null
     if (principal !is OAuth2AuthenticationToken) return null
     return principal.principal.getAttribute<String>("email")

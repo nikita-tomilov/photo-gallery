@@ -19,7 +19,8 @@ class MediaLibraryService(
   @Value("\${lib.location}") private val rootPaths: Array<String>,
   @Autowired private val mediaEntityRepository: MediaEntityRepository,
   @Autowired private val previewService: PreviewService,
-  @Autowired private val fileMetadataExtractorService: FileMetadataExtractorService
+  @Autowired private val fileMetadataExtractorService: FileMetadataExtractorService,
+  @Autowired private val accessRulesService: AccessRulesService
 ) {
 
   private lateinit var rootDirs: List<File>
@@ -46,11 +47,6 @@ class MediaLibraryService(
   }
 
   fun getRootDirs(): List<File> = rootDirs
-
-  fun find(id: Long): MediaEntity? {
-    if (id < 0) return null
-    return mediaEntityRepository.findByIdOrNull(id)
-  }
 
   fun find(file: File): MediaEntity? {
     val existingByName = mediaEntityRepository.findByFileName(file.name)
@@ -81,8 +77,23 @@ class MediaLibraryService(
     return null
   }
 
-  fun find(from: Instant, to: Instant): List<MediaEntity> {
+  fun find(email: String, id: Long): MediaEntity? {
+    val entity = find(id) ?: return null
+    if (accessRulesService.isAllowed(email, entity)) return entity
+    return null
+  }
+
+  fun find(email: String, from: Instant, to: Instant): List<MediaEntity> {
+    return find(from, to).filter { accessRulesService.isAllowed(email, it) }
+  }
+
+  private fun find(from: Instant, to: Instant): List<MediaEntity> {
     return mediaEntityRepository.findAllByParsedDateBetween(from.toEpochMilli(), to.toEpochMilli())
+  }
+
+  private fun find(id: Long): MediaEntity? {
+    if (id < 0) return null
+    return mediaEntityRepository.findByIdOrNull(id)
   }
 
   private fun tryAddNewEntities(): List<MediaEntity> {

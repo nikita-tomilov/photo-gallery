@@ -23,16 +23,16 @@ class MediaLibraryController(
 
   @GetMapping("/")
   fun viewRoot(model: Model, principal: Principal): String {
-    val email = SecurityUtils.extractEmail(principal) ?: throw NotFoundException()
+    val email = SecurityUtils.extractEmailOrThrowException(principal)
     val folders = filesService.getRootDirs(email)
-    model.addAttribute("email", email ?: "<unknown>")
+    model.addAttribute("email", email)
     model.addAttribute("folders", folders)
     return "root"
   }
 
   @GetMapping("/folder")
   fun viewFolder(@RequestParam("path") path: String, model: Model, principal: Principal): String {
-    val email = SecurityUtils.extractEmail(principal) ?: throw NotFoundException()
+    val email = SecurityUtils.extractEmailOrThrowException(principal) ?: throw NotFoundException()
     val contents = filesService.getFolderContent(email, File(path))
     model.addAttribute("cur", contents.current)
     model.addAttribute("parent", contents.parent)
@@ -44,7 +44,7 @@ class MediaLibraryController(
 
   @GetMapping("/year/{year}")
   fun viewYear(@PathVariable("year") year: Long, model: Model, principal: Principal): String {
-    val email = SecurityUtils.extractEmail(principal) ?: throw NotFoundException()
+    val email = SecurityUtils.extractEmailOrThrowException(principal)
     val contents = filesService.getYearContent(email, year)
     model.addAttribute("year", contents.year)
     model.addAttribute("months", contents.months)
@@ -60,8 +60,8 @@ class MediaLibraryController(
     model: Model,
     principal: Principal
   ): String {
-    val email = SecurityUtils.extractEmail(principal) ?: throw NotFoundException()
-    val contents = filesService.getPhotoContent(id, byBackLink(email, back))
+    val email = SecurityUtils.extractEmailOrThrowException(principal)
+    val contents = filesService.getPhotoContent(email, id, byBackLink(email, back))
     val fileDto = contents.first
     val positionDto = contents.second
     model.addAttribute("back", back)

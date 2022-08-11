@@ -2,6 +2,7 @@ package com.nikitatomilov.photogallery.web
 
 import com.nikitatomilov.photogallery.service.MediaLibraryService
 import com.nikitatomilov.photogallery.service.PreviewService
+import com.nikitatomilov.photogallery.util.SecurityUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.io.UrlResource
 import org.springframework.core.io.support.ResourceRegion
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestHeader
 import java.io.FileInputStream
 import java.io.IOException
 import java.lang.Long.min
+import java.security.Principal
 
 @Controller
 class MediaController(
@@ -25,8 +27,9 @@ class MediaController(
 ) {
 
   @GetMapping("/photo/{id}", produces = [MediaType.IMAGE_JPEG_VALUE])
-  fun downloadImage(@PathVariable("id") id: Long): ResponseEntity<ByteArray> {
-    val entity = mediaLibraryService.find(id) ?: return ResponseEntity.notFound().build()
+  fun downloadImage(@PathVariable("id") id: Long, principal: Principal): ResponseEntity<ByteArray> {
+    val email = SecurityUtils.extractEmailOrThrowException(principal)
+    val entity = mediaLibraryService.find(email, id) ?: return ResponseEntity.notFound().build()
     val bytes = StreamUtils.copyToByteArray(FileInputStream(entity.asFile()))
     return ResponseEntity
         .ok()
@@ -35,8 +38,9 @@ class MediaController(
   }
 
   @GetMapping("/preview/{id}", produces = [MediaType.IMAGE_JPEG_VALUE])
-  fun downloadPreview(@PathVariable("id") id: Long): ResponseEntity<ByteArray> {
-    val entity = mediaLibraryService.find(id) ?: return ResponseEntity.notFound().build()
+  fun downloadPreview(@PathVariable("id") id: Long, principal: Principal): ResponseEntity<ByteArray> {
+    val email = SecurityUtils.extractEmailOrThrowException(principal)
+    val entity = mediaLibraryService.find(email, id) ?: return ResponseEntity.notFound().build()
     val bytes = StreamUtils.copyToByteArray(FileInputStream(previewService.getImagePreview(entity)))
     return ResponseEntity
         .ok()
@@ -47,9 +51,11 @@ class MediaController(
   @GetMapping("/video/{id}", produces = [MediaType.APPLICATION_OCTET_STREAM_VALUE])
   fun streamVideo(
     @PathVariable("id") id: Long,
-    @RequestHeader(value = "Range", required = false) rangeHeader: String?
+    @RequestHeader(value = "Range", required = false) rangeHeader: String?,
+    principal: Principal
   ): ResponseEntity<ResourceRegion>? {
-    val entity = mediaLibraryService.find(id) ?: return ResponseEntity.notFound().build()
+    val email = SecurityUtils.extractEmailOrThrowException(principal)
+    val entity = mediaLibraryService.find(email, id) ?: return ResponseEntity.notFound().build()
     val videoResource = UrlResource("file://" + entity.fullPath)
     val resourceRegion: ResourceRegion = getResourceRegion(videoResource, rangeHeader)
 

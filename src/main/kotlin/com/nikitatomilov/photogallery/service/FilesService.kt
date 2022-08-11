@@ -53,8 +53,7 @@ class FilesService(
       val f = ZoneOffset.UTC
       val from = LocalDate.of(year.toInt(), 1, 1).atStartOfDay().toInstant(f)
       val to = LocalDate.of(year.toInt(), 12, 31).atTime(LocalTime.MAX).toInstant(f)
-      mediaLibraryService.find(from, to)
-          .filter { accessRulesService.isAllowed(email, it) }
+      mediaLibraryService.find(email, from, to)
           .sortedBy { it.getDate() }
           .filter { it.isFinal }
     }
@@ -72,10 +71,11 @@ class FilesService(
   }
 
   fun getPhotoContent(
+    email: String,
     id: Long,
     originalRequest: MediaRequest
   ): Pair<MediaFileDto, MediaFilePositionDto> {
-    val entity = mediaLibraryService.find(id)
+    val entity = mediaLibraryService.find(email, id)
       ?: return MediaFileDto.empty(File("$id")) to MediaFilePositionDto.empty(id)
     val photoDto = entity.toPhotoDto()
     val photoPosition = getPosition(entity.id!!, originalRequest)
