@@ -27,6 +27,10 @@ class FilesService(
       .filter { accessRulesService.isAllowed(email, it) }
       .map { FolderDto(it) }
 
+  fun getYears(email: String): List<Int> {
+    return mediaLibraryService.getYears()
+  }
+
   fun getFolderContent(email: String, folder: File): FolderWithContentsDto {
     if (!(isCorrectRequest(folder) && folder.isDirectory)) return FolderWithContentsDto.empty(folder)
     val cur = FolderDto(folder)

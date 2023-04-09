@@ -11,7 +11,11 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import java.io.File
+import java.lang.Long.max
+import java.lang.Long.min
 import java.time.Instant
+import java.time.ZoneOffset
+import java.util.concurrent.atomic.AtomicInteger
 import javax.annotation.PostConstruct
 
 @Service
@@ -39,14 +43,32 @@ class MediaLibraryService(
       error("Entities count mismatch: $all != ${existing.size} + ${new.size}")
     }
     logger.warn { "Overall there are ${all.size} entities in the database that <seem> unique" }
-    /* logger.warn { "Updating thumbnails..." }
+    logger.warn { "Updating thumbnails..." }
+
+    val counter = AtomicInteger(all.size)
     all.parallelStream().forEach {
-      previewService.getImagePreview(it)
+      val (_, alreadyPresent) = previewService.getImagePreview(it)
+      val remaining = counter.decrementAndGet()
+      if (!alreadyPresent) {
+        logger.info { "[$remaining left] Preview for ${it.fullPath} done" }
+      }
     }
-    logger.warn { "Updating thumbnails done" } */
+    logger.warn { "Updating thumbnails done" }
   }
 
   fun getRootDirs(): List<File> = rootDirs
+
+  fun getYears(): List<Int> {
+    val min1 = mediaEntityRepository.findTop1ByOrderByParsedDate().getDate()
+    val max1 = mediaEntityRepository.findTop1ByOrderByParsedDateDesc().getDate()
+    val min2 = mediaEntityRepository.findTop1ByOrderByOverrideDate().getDate()
+    val max2 = mediaEntityRepository.findTop1ByOrderByOverrideDateDesc().getDate()
+    val min = min(min1, min2)
+    val max = max(max1, max2)
+    val y1 = Instant.ofEpochMilli(min).atOffset(ZoneOffset.UTC).year
+    val y2 = Instant.ofEpochMilli(max).atOffset(ZoneOffset.UTC).year
+    return (y1..y2).map { it }.sorted()
+  }
 
   fun find(file: File): MediaEntity? {
     val existingByName = mediaEntityRepository.findByFileName(file.name)
@@ -150,7 +172,8 @@ class MediaLibraryService(
     var fsEntityWithMetadata: FilesystemMediaEntity = fsEntity
     try {
       val timestamp = fileMetadataExtractorService.extractTimestamp(fsEntity.file)
-      fsEntityWithMetadata = fsEntityWithMetadata.withNewTimestamp(timestamp.first, timestamp.second)
+      fsEntityWithMetadata =
+          fsEntityWithMetadata.withNewTimestamp(timestamp.first, timestamp.second)
     } catch (e: Exception) {
       logger.error(e) { "Error on file ${fsEntity.file.absolutePath} " }
       fileSeemsBroken = true

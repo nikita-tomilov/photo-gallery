@@ -41,7 +41,8 @@ class MediaController(
   fun downloadPreview(@PathVariable("id") id: Long, principal: Principal): ResponseEntity<ByteArray> {
     val email = SecurityUtils.extractEmailOrThrowException(principal)
     val entity = mediaLibraryService.find(email, id) ?: return ResponseEntity.notFound().build()
-    val bytes = StreamUtils.copyToByteArray(FileInputStream(previewService.getImagePreview(entity)))
+    val (file, _) = previewService.getImagePreview(entity)
+    val bytes = StreamUtils.copyToByteArray(FileInputStream(file))
     return ResponseEntity
         .ok()
         .contentType(MediaType.IMAGE_JPEG)

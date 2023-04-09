@@ -25,8 +25,10 @@ class MediaLibraryController(
   fun viewRoot(model: Model, principal: Principal): String {
     val email = SecurityUtils.extractEmailOrThrowException(principal)
     val folders = filesService.getRootDirs(email)
+    val years = filesService.getYears(email)
     model.addAttribute("email", email)
     model.addAttribute("folders", folders)
+    model.addAttribute("years", years)
     return "root"
   }
 

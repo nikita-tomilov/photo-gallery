@@ -11,5 +11,9 @@
 <div th:each="folder:${folders}">
     <a th:href="@{/folder?path={path}(path=${folder.path})}" th:text="${folder.displayName}"></a>
 </div>
+<h3>Years:</h3>
+<div th:each="year:${years}">
+    <a th:href="@{/year/{path}(path=${year})}"th:text="${year}"></a>
+</div>
 </body>
 </html>

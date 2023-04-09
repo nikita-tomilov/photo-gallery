@@ -12,4 +12,12 @@ interface MediaEntityRepository: JpaRepository<MediaEntity, Long> {
   fun findByFullPath(fullPath: String): List<MediaEntity>
 
   fun findAllByParsedDateBetween(lowerBound: Long, upperBound: Long): List<MediaEntity>
+
+  fun findTop1ByOrderByParsedDate(): MediaEntity
+
+  fun findTop1ByOrderByParsedDateDesc(): MediaEntity
+
+  fun findTop1ByOrderByOverrideDate(): MediaEntity
+
+  fun findTop1ByOrderByOverrideDateDesc(): MediaEntity
 }

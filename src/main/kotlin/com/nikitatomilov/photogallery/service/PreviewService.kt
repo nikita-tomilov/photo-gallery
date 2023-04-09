@@ -39,10 +39,10 @@ class PreviewService(
     if (!File(previewLocation).exists()) File(previewLocation).mkdirs()
   }
 
-  fun getImagePreview(entity: MediaEntity): File {
+  fun getImagePreview(entity: MediaEntity): Pair<File, Boolean> {
     val previewFile = File(previewLocation, "${entity.id}.jpg")
-    if (previewFile.exists()) return previewFile
-    return generatePreview(entity.asFile(), previewFile, entity.getInstant().toString())
+    if (previewFile.exists()) return previewFile to true
+    return generatePreview(entity.asFile(), previewFile, entity.getInstant().toString()) to false
   }
 
   private fun generatePreview(source: File, target: File, caption: String): File {
