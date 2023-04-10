@@ -48,6 +48,13 @@ val filenameRegexes: Map<Regex, (String) -> Long> =
         }
     )
 
+val filenameRegexesInverted: Map<Regex, (String) -> Long> =
+    mapOf(
+        Regex("\\d{2}.?\\d{2}.?\\d{2}") to {
+          SimpleDateFormat("ddMMyy").parse(it.removeNonDigits()).toInstant()
+              .plusSeconds(60 * 60 * 24 - 1).toEpochMilli()
+        }
+    )
 
 fun nullableMin(x: Long, y: Long?): Long {
   if (y == null) return x

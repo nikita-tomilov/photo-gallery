@@ -3,6 +3,7 @@ package com.nikitatomilov.photogallery.service
 import com.nikitatomilov.photogallery.dao.FilesystemMediaEntity
 import com.nikitatomilov.photogallery.dao.MediaEntity
 import com.nikitatomilov.photogallery.dao.MediaEntityRepository
+import com.nikitatomilov.photogallery.dao.TimestampSource
 import com.nikitatomilov.photogallery.util.isMediaFile
 import com.nikitatomilov.photogallery.util.pathWithoutName
 import mu.KLogging
@@ -170,10 +171,12 @@ class MediaLibraryService(
   private fun indexNew(fsEntity: FilesystemMediaEntity, i: Int, n: Int): MediaEntity? {
     var fileSeemsBroken = false
     var fsEntityWithMetadata: FilesystemMediaEntity = fsEntity
+    var ts: Pair<Long, TimestampSource>? = null
     try {
       val timestamp = fileMetadataExtractorService.extractTimestamp(fsEntity.file)
       fsEntityWithMetadata =
           fsEntityWithMetadata.withNewTimestamp(timestamp.first, timestamp.second)
+      ts = timestamp
     } catch (e: Exception) {
       logger.error(e) { "Error on file ${fsEntity.file.absolutePath} " }
       fileSeemsBroken = true
@@ -188,7 +191,12 @@ class MediaLibraryService(
         determineIfFileIsFinal(fsEntity.file))
     try {
       val saved = mediaEntityRepository.saveAndFlush(new)
-      logger.info { "[$i/$n] ${fsEntityWithMetadata.file.absolutePath} saved with id ${saved.id}" }
+      val timestampString = if (ts != null) {
+        "${Instant.ofEpochMilli(ts.first)} as of ${ts.second.name}"
+      } else {
+        "not found"
+      }
+      logger.info { "[$i/$n] ${fsEntityWithMetadata.file.absolutePath} saved with id ${saved.id} and time $timestampString" }
       return saved
     } catch (e: Exception) {
       logger.error(e) { "Error on saving entity $new" }
