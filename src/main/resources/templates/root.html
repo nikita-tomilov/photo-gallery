@@ -13,7 +13,7 @@
 </div>
 <h3>Years:</h3>
 <div th:each="year:${years}">
-    <a th:href="@{/year/{path}(path=${year})}"th:text="${year}"></a>
+    <a th:href="@{/year/{path}(path=${year.year})}"th:text="|${year.year} (${year.photosCount})|"></a>
 </div>
 </body>
 </html>

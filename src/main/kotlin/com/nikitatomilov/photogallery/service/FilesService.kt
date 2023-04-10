@@ -27,8 +27,11 @@ class FilesService(
       .filter { accessRulesService.isAllowed(email, it) }
       .map { FolderDto(it) }
 
-  fun getYears(email: String): List<Int> {
-    return mediaLibraryService.getYears()
+  fun getYears(email: String): List<YearDto> {
+    return mediaLibraryService.getYears().map { year ->
+      val count = getYearContent(email, year.toLong()).months.sumOf { it.files.size }
+      YearDto(year, count)
+    }
   }
 
   fun getFolderContent(email: String, folder: File): FolderWithContentsDto {
