@@ -8,11 +8,17 @@ import com.nikitatomilov.photogallery.util.*
 import mu.KLogging
 import org.mp4parser.IsoFile
 import org.springframework.stereotype.Service
+import java.awt.Dimension
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
+import java.text.SimpleDateFormat
 import java.time.*
+import javax.imageio.ImageIO
+import javax.imageio.ImageReader
+import javax.imageio.spi.IIORegistry
+import javax.imageio.spi.ImageReaderSpi
 
 @Service
 class FileMetadataExtractorService {
@@ -20,6 +26,85 @@ class FileMetadataExtractorService {
   private fun valid(timestamp: Long): Boolean {
     val upperThreshold = System.currentTimeMillis()
     return (timestamp > lowerThreshold) && (timestamp < upperThreshold)
+  }
+
+  fun extractCameraInfo(file: File): String {
+    if (file.isVideo()) return "unknown-video"
+    val meta =
+        ImageMetadataReader.readMetadata(file)
+    val make = meta.directories.map { d -> d.getString(ExifSubIFDDirectory.TAG_MAKE) }
+        .firstOrNull { it != null }
+    val model = meta.directories.map { d -> d.getString(ExifSubIFDDirectory.TAG_MODEL) }
+        .firstOrNull { it != null }
+
+    val software = meta.directories.map { d -> d.getString(ExifSubIFDDirectory.TAG_SOFTWARE) }
+        .firstOrNull { it != null }
+
+    var ans = "unknown-camera"
+    if (model != null) {
+      if (make != null) {
+        ans = if (model.contains(make)) {
+          model
+        } else {
+          "$make $model"
+        }
+      }
+    }
+    if (software != null) {
+      ans = "$ans ($software)"
+      if (make == null && model == null) {
+        val i = 1
+      }
+    }
+    return ans
+  }
+
+  fun extractDimension(file: File): Dimension {
+    ImageIO.createImageInputStream(file)
+        .use { stream ->  // accepts File, InputStream, RandomAccessFile
+          if (stream != null) {
+            val iioRegistry = IIORegistry.getDefaultInstance()
+            val iter =
+                iioRegistry.getServiceProviders(
+                    ImageReaderSpi::class.java, true)
+            while (iter.hasNext()) {
+              val readerSpi = iter.next()
+              if (readerSpi.canDecodeInput(stream)) {
+                val reader: ImageReader = readerSpi.createReaderInstance()
+                try {
+                  reader.setInput(stream)
+                  val width: Int = reader.getWidth(reader.getMinIndex())
+                  val height: Int = reader.getHeight(reader.getMinIndex())
+                  return Dimension(width, height)
+                } finally {
+                  reader.dispose()
+                }
+              }
+            }
+            return Dimension(-1, -2)
+          } else {
+            throw IllegalArgumentException("Can't open stream for this image")
+          }
+        }
+  }
+
+  val exifFormat = SimpleDateFormat("yyyy:MM:dd HH:mm:ssXXX")
+
+  fun extractTimestampExifTool(file: File): Long? {
+    val command = "exiftool '${file.absolutePath}' | grep Date"
+    val proc = Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", command))
+    val out = proc.inputStream.bufferedReader().readText()
+    proc.waitFor()
+    val lines = out.split("\n")
+    val dates = lines.filter { it.isNotBlank() }.map { it.split(": ")[1] }
+    val datesParsed = dates.mapNotNull {
+      try {
+        exifFormat.parse(it)
+      } catch (e: Exception) {
+        null
+      }
+    }
+    return datesParsed.map { it.toInstant().toEpochMilli() }.minOrNull()
   }
 
   fun extractTimestamp(file: File): Pair<Long, TimestampSource> {

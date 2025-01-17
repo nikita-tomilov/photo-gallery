@@ -6,8 +6,8 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 
 fun File.isMediaFile() = this.isPhoto() || this.isVideo()
-fun File.isPhoto() = this.isFileWithExtension(setOf("jpg", "png")) && this.isNotMacosPreview()
-fun File.isVideo() = this.isFileWithExtension(setOf("avi", "mp4")) && this.isNotMacosPreview()
+fun File.isPhoto() = this.isFileWithExtension(setOf("jpg", "jpeg", "heic", "png")) && this.isNotMacosPreview()
+fun File.isVideo() = this.isFileWithExtension(setOf("avi", "mp4", "mov")) && this.isNotMacosPreview()
 fun File.isSoftSymlink() = this.isFileWithExtension(setOf("symlink")) && this.isNotMacosPreview()
 fun File.pathWithoutName() = this.absolutePath.replace(this.name, "")
 
